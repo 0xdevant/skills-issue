@@ -36,15 +36,18 @@ almost nothing measures that.
 
 ### Ask your agent to do it
 
-Paste this prompt into Claude Code, Cursor, or any agent with shell access:
+Paste this prompt into any agent with shell access:
 
 ```text
 Install the "token-usage-audit" skill from https://github.com/0xdevant/agent-skills
 
 1. Clone the repo to a temp directory (or `git pull` if you already have it).
-2. Copy the `token-usage-audit/` folder into my personal skills directory:
-   - Claude Code: ${CLAUDE_CONFIG_DIR:-~/.claude}/skills/token-usage-audit/
-   - Cursor:      ~/.cursor/skills/token-usage-audit/
+2. Copy the `token-usage-audit/` folder into wherever you load skills from.
+   Common skills directories:
+     Claude Code  ${CLAUDE_CONFIG_DIR:-~/.claude}/skills/token-usage-audit/
+     Cursor       ~/.cursor/skills/token-usage-audit/
+   If you have no skills directory, keep the clone somewhere stable and read its
+   SKILL.md when I ask about token usage or AI cost.
    Use `rsync -a --delete`, not `cp -r` — cp nests the folder on re-install.
 3. Verify: run `node <that-path>/scripts/audit.mjs --list-sources` and show me
    the output. It should list which agent logs it found on this machine.
@@ -60,15 +63,19 @@ logs anywhere; this tool is local-only by design.
 
 ```bash
 git clone https://github.com/0xdevant/agent-skills
-rsync -a --delete agent-skills/token-usage-audit/ ~/.claude/skills/token-usage-audit/
-node ~/.claude/skills/token-usage-audit/scripts/audit.mjs --list-sources
+rsync -a --delete agent-skills/token-usage-audit/ <your-skills-dir>/token-usage-audit/
+node <your-skills-dir>/token-usage-audit/scripts/audit.mjs --list-sources
 ```
 
-It also runs fine straight from the clone without installing anything:
+**It needs no skills directory at all.** The scripts are an ordinary CLI — run them
+straight from the clone:
 
 ```bash
 cd agent-skills/token-usage-audit && node scripts/audit.mjs --since 30d
 ```
+
+That matters more here than for most skills: this one audits *whatever agents you
+already use*, so it is useful even from a client that has no concept of skills.
 
 ## Commands
 
