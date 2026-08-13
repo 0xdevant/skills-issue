@@ -17,7 +17,7 @@ import { join, dirname, basename } from "node:path";
 import { homedir } from "node:os";
 import { createHash } from "node:crypto";
 
-import { loadPricing, usd } from "./lib/cost.mjs";
+import { loadPricing, usd, cacheReadRate } from "./lib/cost.mjs";
 import { loadSourceDefs, detectSources, readSource, parseSince, expandPath } from "./lib/sources.mjs";
 import { createAggregator } from "./lib/aggregate.mjs";
 import { fingerprint } from "./lib/fingerprint.mjs";
@@ -40,7 +40,8 @@ token-usage-audit — apply
   node scripts/apply.mjs undo <id|latest>        restore from backup, byte-identically
   node scripts/apply.mjs backups                 list restore points
 
-Options: --dry-run (print the diff, write nothing), --json, --help
+Options: --dry-run (print the diff, write nothing), --confirm, --json,
+         --window <200k|200000> (for autocompact-window), --help
 `;
 
 // ---------------------------------------------------------------- backup / restore
@@ -235,6 +236,63 @@ function buildFixes(ctx) {
     },
   });
 
+  // ---- RISKY: cap how large the context may grow before the harness compacts
+  //
+  // This is the one config lever that attacks context bloat directly. Hooks cannot
+  // do it — no hook can initiate a compaction, only block one — but the harness
+  // exposes a native window setting, and lowering it caps every session's context.
+  const windowTokens = ctx.window || 200_000;
+  const modelWindow = (W) => {
+    let excess = 0, over = 0, comps = 0, ccost = 0;
+    for (const s of agg.sessions.values()) {
+      const rate = cacheReadRate(ctx.pricing, s.model) ?? 0;
+      for (const c of s.ctx) if (c > W) { excess += (c - W) * rate; over++; }
+      const n = Math.floor(Math.max(0, ...s.ctx, 0) / W);
+      comps += n; ccost += n * W * rate;
+    }
+    return { W, excess, over, comps, ccost, net: excess - ccost };
+  };
+
+  fixes.push({
+    id: "autocompact-window",
+    risk: "risky",
+    title: "Cap context growth with the auto-compact window",
+    why:
+      "By default the harness compacts only at the model's context limit, which on a " +
+      "1M-token model means sessions can carry hundreds of thousands of tokens that " +
+      "every later turn re-reads. Lowering the window caps that. Compaction is not free — " +
+      "it re-reads the context to summarize it — but that one-off is small against " +
+      "carrying the context for hundreds of turns.",
+    available: agg.sessions.size > 0 && [...agg.sessions.values()].some((s) => s.peakCtx > 250_000),
+    targets: [join(CONFIG_DIR, "settings.json")],
+    async preview() {
+      const cur = JSON.parse((await readIfExists(join(CONFIG_DIR, "settings.json"))) || "{}");
+      const rows = [400_000, 300_000, 200_000, 150_000].map(modelWindow);
+      const peak = Math.max(0, ...[...agg.sessions.values()].map((s) => s.peakCtx));
+      let out =
+        `Current setting: ${cur.autoCompactWindow ?? bold("unset")} — compaction happens only at the\n` +
+        `model's context limit. Measured peak context: ${(peak / 1000).toFixed(0)}k tokens.\n\n` +
+        `  window   turns over   context saved   compactions   their cost      NET\n`;
+      for (const r of rows) {
+        out += `  ${((r.W / 1000) + "k").padStart(6)} ${String(r.over).padStart(11)} ` +
+          `${usd(r.excess).padStart(15)} ${String(r.comps).padStart(13)} ${usd(r.ccost).padStart(12)} ${bold(usd(r.net).padStart(8))}\n`;
+      }
+      out += `\n  Would set: "autoCompactWindow": ${windowTokens}\n\n` +
+        `  ${bold("The real trade-off is not tokens, it is memory.")} Compaction summarizes and\n` +
+        `  drops history, so a session that genuinely needs its full past will lose detail.\n` +
+        `  The saving above is modelled, not measured: it assumes compaction fires cleanly\n` +
+        `  at the window and re-reads it once.`;
+      return out;
+    },
+    async run() {
+      const settingsPath = join(CONFIG_DIR, "settings.json");
+      const json = JSON.parse((await readIfExists(settingsPath)) || "{}");
+      json.autoCompactWindow = windowTokens;
+      await writeFile(settingsPath, JSON.stringify(json, null, 2) + "\n");
+      return `set autoCompactWindow=${windowTokens} in ${settingsPath}`;
+    },
+  });
+
   // ---- RISKY: archive agent definitions that were never delegated to
   const usedAgents = new Set(agg.subagents.map((s) => s.agent_type).filter(Boolean));
   const agentFiles = fp.supported ? fp.files.filter((f) => f.label === "agent definitions") : [];
@@ -392,6 +450,8 @@ async function main() {
       case "--json": opt.json = true; break;
       case "--confirm": opt.confirm = true; break;
       case "--pricing": opt.pricing = argv[++i]; break;
+      case "--window": opt.window = String(argv[++i]).toLowerCase().endsWith("k")
+        ? Number(argv[i].slice(0, -1)) * 1000 : Number(argv[i]); break;
       default: positional.push(argv[i]);
     }
   }
@@ -412,7 +472,7 @@ async function main() {
     return;
   }
 
-  const ctx = await analyze(opt);
+  const ctx = { ...(await analyze(opt)), window: opt.window };
   const fixes = buildFixes(ctx);
 
   if (cmd === "plan") {
