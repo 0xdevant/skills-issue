@@ -35,7 +35,29 @@ Do this before touching anything. It records the configuration fingerprint and t
 normalized usage metrics that every later comparison depends on. A fix applied
 without a baseline can never be measured — the evidence is gone.
 
-## Step 2 — Run the audit
+## Step 2 — Ask the user to run the harness's own tooling first
+
+For Claude Code, ask them to run **`/usage`** and paste the result, and **`/insights`**
+if they never have. Do not skip this and do not try to run them yourself — they are
+interactive commands, not shell commands.
+
+They cover ground this skill structurally cannot:
+
+- **`/usage`** is the ONLY source for plan limits and remaining headroom. Local logs do
+  not record them. On a flat-rate plan this is the difference between "worth fixing"
+  and "interesting but irrelevant" — if they are nowhere near their limits, say so and
+  scale your recommendations down accordingly.
+- **`/usage`** also attributes usage by skill, subagent and MCP server, and flags
+  behaviours like long context or cache misses at >=10% of recent usage. Where it
+  agrees with a finding below, say so — an independently corroborated finding is worth
+  far more than one this tool asserts alone.
+- **`/insights`** analyses workflow friction (misunderstood requests, rework) rather
+  than tokens. Its report lands at `~/.claude/usage-data/report.html`.
+
+If any of them contradicts a finding here, **the built-in wins** on plan limits and
+attribution. Say which one you are trusting and why.
+
+## Step 3 — Run the audit
 
 ```bash
 node scripts/audit.mjs --since 30d
@@ -44,7 +66,7 @@ node scripts/audit.mjs --since 30d
 Add `--source <name>` to restrict to one harness, `--project <substring>` to restrict
 to one codebase, `--json` for machine output. `--list-sources` shows what was detected.
 
-## Step 3 — Establish how the user actually pays, THEN present the findings
+## Step 4 — Establish how the user actually pays, THEN present the findings
 
 **Ask first if you do not know: flat-rate subscription, or API/pay-as-you-go?** This
 changes what the entire report means, and getting it wrong is the single most
@@ -68,8 +90,11 @@ table. Rules when relaying them:
   add them back up.
 - **Report the "Not evaluated" list.** A finding the source cannot support is stated,
   not silently dropped. That distinction is the point.
+- **Relay each finding's `cross-check` line.** It names the native command that
+  confirms the finding independently. A user who can verify a claim themselves should
+  be told how.
 
-## Step 4 — Apply the safe fixes
+## Step 5 — Apply the safe fixes
 
 ```bash
 node scripts/apply.mjs list
@@ -79,7 +104,7 @@ node scripts/apply.mjs apply context-meter
 Safe fixes are additive and reversible; apply them directly. Every write is backed up
 and `apply.mjs undo <id>` restores byte-identically.
 
-## Step 5 — Show the risky fixes, then confirm
+## Step 6 — Show the risky fixes, then confirm
 
 ```bash
 node scripts/apply.mjs apply <id> --dry-run
@@ -89,7 +114,7 @@ Risky fixes edit content the user wrote or change what the agent can reach. Show
 `--dry-run` output, explain the trade-off, and re-run with `--confirm` only after the
 user agrees. Never pass `--confirm` on the user's behalf.
 
-## Step 6 — Emit the manual plan
+## Step 7 — Emit the manual plan
 
 ```bash
 node scripts/apply.mjs plan
@@ -99,7 +124,7 @@ The largest savings are usually behavioural — when to reset context, how to ke
 outputs out of it. These cannot be automated and must not be dropped. Relay them with
 the evidence attached.
 
-## Step 7 — Tell the user how to prove it
+## Step 8 — Tell the user how to prove it
 
 Two commands, two different guarantees. Say which is which:
 
@@ -127,6 +152,9 @@ Two commands, two different guarantees. Say which is which:
 - **Never write a config file without a backup**, and never pass `--confirm` yourself.
 - **Never suggest uploading logs anywhere.** They contain the user's source code.
 - If a source mapping is marked `unverified`, say so when reporting its numbers.
+- **Never present this skill as a replacement for the harness's own usage tooling.**
+  It reads local logs; it cannot see plan limits. On Claude Code, `/usage` is
+  authoritative on limits and attribution, and `/insights` on workflow patterns.
 
 ## Do NOT use for
 

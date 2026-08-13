@@ -24,6 +24,33 @@ Reads local logs only. Nothing is uploaded. Zero npm dependencies, Node ≥ 18.
      Median context 168k, peak 831k.
 ```
 
+## Do you even need this?
+
+**Run your harness's built-ins first.** On Claude Code they cover a lot of this ground
+and they are authoritative where this tool cannot see:
+
+| Built-in | What it gives you | This tool cannot |
+|---|---|---|
+| `/usage` | Plan limits and remaining headroom; usage attributed by skill, subagent and MCP server; behaviour flags for long context and cache misses | see plan limits at all — local logs do not record them |
+| `/context` | Live breakdown of what is in the context window right now | show you the current session |
+| `/insights` | Workflow friction across recent sessions — misunderstood requests, rework | measure anything that is not a token |
+
+If `/usage` says you are nowhere near your limits and nothing is flagged, you probably
+do not need this tool. That is a real answer, and it is the one you should act on.
+
+**What this adds on top:**
+
+- **A recommended `autoCompactWindow`**, modelled against your own sessions with
+  compaction's own cost netted off. Nothing built-in tells you which value to pick.
+- **Per-session cost ranking** — which session, which project, how many turns, peak
+  context. `/usage` attributes by category, not by session.
+- **A before/after benchmark** that separates deterministic config effects from
+  workload-confounded trends, and verifies its own prediction.
+- **Other harnesses** — Codex, Gemini, OpenCode (mappings currently unverified).
+
+Every finding it prints carries a `cross-check` line naming the native command that
+confirms it independently. Where they disagree, believe the built-in.
+
 ## Why this exists
 
 Most token-optimization advice targets cache hit rate. On real data that is usually

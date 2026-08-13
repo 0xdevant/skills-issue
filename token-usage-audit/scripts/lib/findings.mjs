@@ -45,6 +45,7 @@ const define = (f) => { F.push(f); return f; };
 
 define({
   id: "context-bloat",
+  builtin: "/usage flags 'long context' as a behavior flag at >=10% of recent usage; /context shows the live breakdown",
   title: "Oversized context re-read on every turn",
   requires: { caps: ["cache"], fields: ["cache_read_tokens"] },
   compute(agg, opt) {
@@ -100,6 +101,7 @@ define({
 
 define({
   id: "session-sprawl",
+  builtin: "/usage, press w for the 7-day view",
   title: "Sessions that never reset",
   requires: { fields: ["session_id"] },
   overlaps: ["context-bloat"],
@@ -128,6 +130,7 @@ define({
 
 define({
   id: "compaction-pressure",
+  builtin: "/autocompact to set the window, /compact for a manual pass",
   title: "Context compaction churn",
   requires: { caps: ["compaction"] },
   compute(agg, opt) {
@@ -158,6 +161,7 @@ define({
 
 define({
   id: "model-routing",
+  builtin: "/model to switch or set a default; /usage attributes usage by subagent and skill",
   title: "Spend concentrated in expensive models",
   requires: { fields: ["model"] },
   compute(agg, opt) {
@@ -194,6 +198,7 @@ define({
 
 define({
   id: "subagent-roi",
+  builtin: "/usage attribution breaks recent usage down by subagent",
   title: "Delegations that cost more than they returned",
   requires: { caps: ["subagents"] },
   compute(agg, opt) {
@@ -245,6 +250,7 @@ define({
 
 define({
   id: "session-start-overhead",
+  builtin: "/context shows exactly what the resident prefix contains",
   title: "Fixed per-session startup tax",
   requires: { caps: ["cache"], fields: ["cache_write_tokens"] },
   overlaps: ["context-bloat"],
@@ -282,6 +288,7 @@ define({
 
 define({
   id: "tool-output-waste",
+  builtin: "/context shows what is occupying the window right now",
   title: "Large tool outputs re-read for the rest of the session",
   requires: { caps: ["tool_results"] },
   overlaps: ["context-bloat"],
@@ -332,6 +339,7 @@ define({
 
 define({
   id: "redundant-reads",
+  builtin: "/insights reports friction patterns across recent sessions",
   title: "The same file read repeatedly in one session",
   requires: { caps: ["tool_results"] },
   overlaps: ["tool-output-waste"],
@@ -364,6 +372,7 @@ define({
 
 define({
   id: "cache-ttl-fit",
+  builtin: "/usage flags 'cache misses' as a behavior flag when they are significant",
   title: "Cache TTL mismatched to actual turn gaps",
   requires: { caps: ["cache_ttl"] },
   compute(agg, opt) {
@@ -394,6 +403,7 @@ define({
 
 define({
   id: "tool-schema-tax",
+  builtin: "/mcp lists configured servers; /context shows their schema cost",
   title: "Tool schemas loaded but never invoked",
   requires: { caps: ["tool_results"] },
   compute(agg, opt) {
@@ -427,6 +437,7 @@ define({
 
 define({
   id: "wasted-turns",
+  builtin: "/insights covers misunderstood requests and rework",
   title: "Turns spent on errors and retries",
   requires: { caps: ["errors"] },
   compute(agg, opt) {
@@ -469,7 +480,7 @@ export function runFindings(agg, opt) {
       continue;
     }
     if (!out) { skipped.push({ id: f.id, title: f.title, reason: "no occurrences in this window" }); continue; }
-    results.push({ id: f.id, title: f.title, overlaps: f.overlaps || [], ...out });
+    results.push({ id: f.id, title: f.title, overlaps: f.overlaps || [], builtin: f.builtin || null, ...out });
   }
 
   results.sort((a, b) => b.cost - a.cost);

@@ -6,6 +6,10 @@
  * actually goes, ranked by cost, with a named fix for each finding.
  */
 
+import { stat, readdir } from "node:fs/promises";
+import { join } from "node:path";
+import { homedir } from "node:os";
+
 import { loadPricing, usd } from "./lib/cost.mjs";
 import { loadSourceDefs, detectSources, readSource, parseSince } from "./lib/sources.mjs";
 import { createAggregator } from "./lib/aggregate.mjs";
@@ -81,6 +85,43 @@ function wrap(text, width = 84, indent = "  ") {
   }
   if (cur.trim()) lines.push(cur.trim());
   return lines.map((l) => indent + l).join("\n");
+}
+
+/**
+ * The harness ships its own usage tooling. This report is stronger when read
+ * alongside it, not instead of it: /usage is authoritative on plan limits (which
+ * local logs cannot see at all), and /insights covers workflow patterns rather
+ * than tokens. Point at both rather than pretending to replace them.
+ */
+async function builtinsStatus() {
+  const dir = join(process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"), "usage-data");
+  let insights = null;
+  try {
+    const reports = (await readdir(dir)).filter((f) => f.endsWith(".html"));
+    if (reports.length) {
+      const st = await stat(join(dir, "report.html"));
+      insights = { path: join(dir, "report.html"), ageDays: (Date.now() - st.mtimeMs) / 86400e3, count: reports.length };
+    }
+  } catch { /* never run */ }
+  return { insights, dir };
+}
+
+function reportBuiltins(b, hasRateLimitQuestion) {
+  console.log("\n" + bold("  Corroborate with the harness's own tooling"));
+  console.log(dim("    This report reads local logs. Two things it structurally cannot see:"));
+  console.log(`    ${bold("/usage")}     plan limits and remaining headroom — the only source for whether any`);
+  console.log(dim("               of this matters. Also attributes usage by skill, subagent and MCP"));
+  console.log(dim("               server, and flags 'long context' / 'cache misses' behaviours."));
+  if (b.insights) {
+    const age = b.insights.ageDays;
+    console.log(`    ${bold("/insights")}  report from ${age < 1 ? "today" : `${age.toFixed(0)}d ago`} at ${b.insights.path.replace(homedir(), "~")}`);
+    if (age > 7) console.log(dim("               older than a week — re-run to reflect current habits."));
+  } else {
+    console.log(`    ${bold("/insights")}  never run. It analyses recent sessions for workflow friction —`);
+    console.log(dim("               misunderstood requests, rework — which token counts cannot show."));
+  }
+  console.log(dim("\n    Where a finding above has a cross-check line, that is the native command"));
+  console.log(dim("    which confirms it independently. Trust it over this report on plan limits."));
 }
 
 // ---------------------------------------------------------------- main
@@ -172,6 +213,7 @@ function report(res, opt) {
     console.log(wrap(f.headline, 84, "     "));
     console.log(dim(wrap(f.detail, 84, "     ")));
     if (f.table?.length) console.log("\n" + table(f.table.slice(0, opt.top)).split("\n").map((l) => "   " + l).join("\n"));
+    if (f.builtin) console.log(dim(`\n     cross-check: ${f.builtin}`));
     if (f.fix?.summary) {
       console.log("\n     " + dim("fix: ") + f.fix.summary);
       for (const a of f.fix.actions || []) console.log(dim("       • " + a));
@@ -224,8 +266,8 @@ async function main() {
         by_model: Object.fromEntries(r.agg.byModel),
         unpriced: Object.fromEntries(r.agg.unpriced),
         gaps: [...r.agg.gaps],
-        findings: r.findings.map(({ id, title, cost, estimate, headline, detail, table, fix, overlaps }) =>
-          ({ id, title, cost_usd: cost, estimate, headline, detail, table, fix, overlaps })),
+        findings: r.findings.map(({ id, title, cost, estimate, headline, detail, table, fix, overlaps, builtin }) =>
+          ({ id, title, cost_usd: cost, estimate, headline, detail, table, fix, overlaps, builtin })),
         skipped: r.skipped,
       })),
     }, null, 2));
@@ -233,6 +275,7 @@ async function main() {
   }
 
   for (const r of results) report(r, opt);
+  if (results.some((r) => r.def.name === "claude-code")) reportBuiltins(await builtinsStatus());
   console.log("\n" + dim("  Dollar figures are API list-price equivalents, not a bill." +
     "\n  Next: node scripts/benchmark.mjs snapshot --label before   (then apply fixes, then verify)\n"));
 }
