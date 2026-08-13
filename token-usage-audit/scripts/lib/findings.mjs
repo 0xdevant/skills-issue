@@ -347,7 +347,7 @@ define({
     const rows = [];
     for (const [key, e] of agg.repeatReads) {
       if (e.count < opt.redundantReadThreshold) continue;
-      rows.push({ target: key.split("::")[1], count: e.count, bytes: e.bytes });
+      rows.push({ target: key.split("::")[1], count: e.count, bytes: e.bytes, tokens: e.tokens || 0 });
     }
     if (!rows.length) return null;
     const rate = cacheReadRate(opt.pricing, agg.dominantModel) ?? 0;

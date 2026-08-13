@@ -236,6 +236,11 @@ async function main() {
       agg.event({ kind: "tool_result", session_id: "big", bytes: 200_000, tokens: 50_000,
         target: `/f${i}.txt`, ts: "2026-08-01T10:05:00Z" });
     }
+    // Same file read repeatedly -> exercises the redundant-reads finding.
+    for (let i = 0; i < 4; i++) {
+      agg.event({ kind: "tool_result", session_id: "big", bytes: 40_000, tokens: 10_000,
+        target: "/repeated.ts", ts: "2026-08-01T10:06:00Z" });
+    }
     const a = agg.finalize();
     const { findings, addressable } = runFindings(a, { pricing, capabilities: ["cache", "tool_results"],
       sourceName: "t", top: 5, targetContext: 120_000, longSessionTurns: 150,
@@ -249,6 +254,17 @@ async function main() {
           `finding=${f.cost} pool=${a.cacheReadCost}`);
       }
     }
+    // Regression guard: a finding must never emit NaN. A missing field silently
+    // becomes NaN in arithmetic, which renders as "no $ claimed" and looks like a
+    // legitimate result rather than a bug.
+    for (const f of findings) {
+      check(`${f.id} cost is a finite number`, Number.isFinite(f.cost), `cost=${f.cost}`);
+      const bad = (f.table || []).flatMap((row) =>
+        Object.entries(row).filter(([, v]) => typeof v === "number" ? !Number.isFinite(v) : String(v) === "NaN")
+      );
+      check(`${f.id} table has no NaN cells`, bad.length === 0, JSON.stringify(bad));
+    }
+
     const overlapping = findings.filter((f) => f.overlaps.length).map((f) => f.id);
     check("decomposition findings are marked as overlapping",
       overlapping.includes("tool-output-waste") && overlapping.includes("session-start-overhead"),
