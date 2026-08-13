@@ -1,0 +1,28 @@
+{
+  "name": "opencode",
+  "display_name": "OpenCode",
+  "status": "unverified",
+  "provider_hint": null,
+  "roots": ["$XDG_DATA_HOME/opencode", "~/.local/share/opencode"],
+  "glob": "storage/**/*.json",
+  "format": "jsonl",
+  "session_id_from": "filename_stem",
+  "capabilities": ["cache"],
+  "_notes": [
+    "UNVERIFIED: not confirmed against a real install. OpenCode is multi-provider, so",
+    "provider_hint is null and the model id alone drives pricing — which is exactly what",
+    "the provider `match` prefixes in pricing.json are for."
+  ],
+  "records": {
+    "select": { "tokens": "$exists" },
+    "map": {
+      "model": { "paths": ["modelID", "model"] },
+      "ts": { "paths": ["time.created", "timestamp"] },
+      "input_tokens": { "path": "tokens.input", "default": 0 },
+      "output_tokens": { "path": "tokens.output", "default": 0 },
+      "reasoning_tokens": { "path": "tokens.reasoning", "default": 0 },
+      "cache_read_tokens": { "path": "tokens.cache.read", "default": 0 },
+      "cache_write_tokens.default": { "path": "tokens.cache.write", "default": 0 }
+    }
+  }
+}

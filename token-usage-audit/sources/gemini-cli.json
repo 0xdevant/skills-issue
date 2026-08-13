@@ -1,0 +1,28 @@
+{
+  "name": "gemini-cli",
+  "display_name": "Google Gemini CLI",
+  "status": "unverified",
+  "provider_hint": "google",
+  "roots": ["$GEMINI_HOME", "~/.gemini"],
+  "glob": "tmp/**/*.json",
+  "format": "jsonl",
+  "session_id_from": "filename_stem",
+  "capabilities": ["cache"],
+  "_notes": [
+    "UNVERIFIED: not confirmed against a real install. Gemini reports usage as",
+    "usageMetadata with promptTokenCount / candidatesTokenCount / cachedContentTokenCount.",
+    "Google also bills cache STORAGE per hour, which the logs do not record — cost.mjs",
+    "surfaces that as an explicit gap rather than guessing it."
+  ],
+  "records": {
+    "select": { "usageMetadata": "$exists" },
+    "map": {
+      "model": { "paths": ["modelVersion", "model"] },
+      "ts": { "paths": ["timestamp", "createTime"] },
+      "input_tokens": { "path": "usageMetadata.promptTokenCount", "default": 0 },
+      "output_tokens": { "path": "usageMetadata.candidatesTokenCount", "default": 0 },
+      "reasoning_tokens": { "path": "usageMetadata.thoughtsTokenCount", "default": 0 },
+      "cache_read_tokens": { "path": "usageMetadata.cachedContentTokenCount", "default": 0 }
+    }
+  }
+}
