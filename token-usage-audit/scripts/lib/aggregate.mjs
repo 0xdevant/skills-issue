@@ -115,20 +115,20 @@ export function createAggregator(pricing) {
           break;
         case "tool_result": {
           if (ev.agent_type) break; // subagent results are counted as delegations, not tool output
-          if (ev.bytes >= 4096) {
+          if ((ev.tokens || 0) >= 1000) {
             agg.bigOutputs.push({
-              session_id: ev.session_id, bytes: ev.bytes, target: ev.target, ts: ev.ts,
-              tool_id: ev.tool_id,
+              session_id: ev.session_id, bytes: ev.bytes, tokens: ev.tokens || 0,
+              media: ev.media, target: ev.target, ts: ev.ts, tool_id: ev.tool_id,
             });
             if (agg.bigOutputs.length > TOP_OUTPUTS * 2) {
-              agg.bigOutputs.sort((a, b) => b.bytes - a.bytes);
+              agg.bigOutputs.sort((a, b) => b.tokens - a.tokens);
               agg.bigOutputs.length = TOP_OUTPUTS;
             }
           }
           if (ev.target) {
             const key = `${ev.session_id}::${ev.target}`;
-            const e = agg.repeatReads.get(key) || { count: 0, bytes: 0 };
-            e.count++; e.bytes += ev.bytes || 0;
+            const e = agg.repeatReads.get(key) || { count: 0, bytes: 0, tokens: 0 };
+            e.count++; e.bytes += ev.bytes || 0; e.tokens += ev.tokens || 0;
             agg.repeatReads.set(key, e);
           }
           break;
@@ -169,7 +169,7 @@ export function createAggregator(pricing) {
         const nextCut = cuts.find((t) => t >= o.turnAt);
         o.carriedUntil = nextCut != null ? nextCut : (s ? s.turns : o.turnAt);
       }
-      agg.bigOutputs.sort((a, b) => b.bytes - a.bytes);
+      agg.bigOutputs.sort((a, b) => b.tokens - a.tokens);
 
       let best = null;
       for (const [model, m] of agg.byModel) if (!best || m.cost > best.cost) best = { model, cost: m.cost };

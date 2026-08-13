@@ -75,6 +75,8 @@
         "ts": "timestamp",
         "session_id": "sessionId",
         "bytes": { "path": "toolUseResult", "transform": "json_bytes", "default": 0 },
+        "tokens": { "path": "toolUseResult", "transform": "result_tokens", "default": 0 },
+        "media": { "path": "toolUseResult.type" },
         "target": { "paths": ["toolUseResult.file.filePath", "toolUseResult.filePath"] },
         "tool_id": "message.content[type=tool_result].tool_use_id",
         "agent_type": { "path": "toolUseResult.agentType" }

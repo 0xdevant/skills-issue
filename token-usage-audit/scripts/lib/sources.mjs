@@ -113,9 +113,33 @@ export function getPath(obj, path) {
   return cur;
 }
 
+/**
+ * Estimated context tokens for a tool result.
+ *
+ * Images are NOT text: their cost scales with pixel dimensions, not payload size.
+ * A base64 PNG measured as text overstates its real cost by an order of magnitude
+ * (34x on the corpus this was built against), which is enough to make image-heavy
+ * work look like the dominant problem when it is not. Where a harness records
+ * dimensions, use them; otherwise fall back to the text estimate.
+ */
+const IMAGE_TOKENS_PER_PIXEL = 1 / 750; // Anthropic vision: ~(w x h) / 750
+const imageTokens = (w, h) => Math.round(w * h * IMAGE_TOKENS_PER_PIXEL);
+
 /** Named transforms keep mappings declarative for things a path alone can't express. */
 const TRANSFORMS = {
   json_bytes: (v) => (v == null ? 0 : Buffer.byteLength(typeof v === "string" ? v : JSON.stringify(v), "utf8")),
+  result_tokens: (v) => {
+    if (v == null) return 0;
+    const d = v?.file?.dimensions;
+    if (v?.type === "image" && d) {
+      // Prefer the dimensions actually sent; harnesses downscale before upload.
+      const w = d.displayWidth ?? d.originalWidth ?? 0;
+      const h = d.displayHeight ?? d.originalHeight ?? 0;
+      if (w > 0 && h > 0) return imageTokens(w, h);
+    }
+    const s = typeof v === "string" ? v : JSON.stringify(v);
+    return Math.round(Buffer.byteLength(s, "utf8") / 4);
+  },
   str_len: (v) => (v == null ? 0 : String(v).length),
   array_len: (v) => (Array.isArray(v) ? v.length : 0),
   lower: (v) => (v == null ? v : String(v).toLowerCase()),

@@ -208,9 +208,9 @@ async function main() {
     const a = agg.finalize();
 
     const withCache = runFindings(a, { pricing, capabilities: ["cache"], sourceName: "t", top: 5,
-      targetContext: 120_000, longSessionTurns: 150, bigToolOutputBytes: 20_000, redundantReadThreshold: 3 });
+      targetContext: 120_000, longSessionTurns: 150, bigToolOutputTokens: 5_000, redundantReadThreshold: 3 });
     const without = runFindings(a, { pricing, capabilities: [], sourceName: "t", top: 5,
-      targetContext: 120_000, longSessionTurns: 150, bigToolOutputBytes: 20_000, redundantReadThreshold: 3 });
+      targetContext: 120_000, longSessionTurns: 150, bigToolOutputTokens: 5_000, redundantReadThreshold: 3 });
 
     check("cache findings run when the source declares the capability",
       withCache.findings.some((f) => f.id === "context-bloat"));
@@ -233,13 +233,13 @@ async function main() {
         cache_write_tokens: { "5m": 2000, "1h": 0, default: 0 } });
     }
     for (let i = 0; i < 50; i++) {
-      agg.event({ kind: "tool_result", session_id: "big", bytes: 200_000, target: `/f${i}.txt`,
-        ts: "2026-08-01T10:05:00Z" });
+      agg.event({ kind: "tool_result", session_id: "big", bytes: 200_000, tokens: 50_000,
+        target: `/f${i}.txt`, ts: "2026-08-01T10:05:00Z" });
     }
     const a = agg.finalize();
     const { findings, addressable } = runFindings(a, { pricing, capabilities: ["cache", "tool_results"],
       sourceName: "t", top: 5, targetContext: 120_000, longSessionTurns: 150,
-      bigToolOutputBytes: 20_000, redundantReadThreshold: 3 });
+      bigToolOutputTokens: 5_000, redundantReadThreshold: 3 });
 
     check("addressable never exceeds total spend", addressable <= a.totalCost + 1e-9,
       `addressable=${addressable} total=${a.totalCost}`);
@@ -253,6 +253,51 @@ async function main() {
     check("decomposition findings are marked as overlapping",
       overlapping.includes("tool-output-waste") && overlapping.includes("session-start-overhead"),
       `overlapping=${overlapping.join(",")}`);
+  }
+
+  // --- image results priced by pixels, not payload size ----------------
+
+  {
+    const root = await tmp();
+    await mkdir(join(root, "projects", "p1"), { recursive: true });
+    // A 1000x1000 image is ~1333 tokens. Its base64 payload is ~600k chars, which
+    // as text would read as ~150k tokens — a 100x overstatement.
+    const imgEntry = JSON.stringify({
+      type: "user", timestamp: "2026-08-01T10:00:00.000Z", sessionId: "s1",
+      message: { content: [{ type: "tool_result", tool_use_id: "t1" }] },
+      toolUseResult: {
+        type: "image",
+        file: { type: "image/png", base64: "A".repeat(600_000),
+                dimensions: { originalWidth: 2000, originalHeight: 2000, displayWidth: 1000, displayHeight: 1000 } },
+      },
+    });
+    await writeFile(join(root, "projects", "p1", "s1.jsonl"), cc({ id: "a" }) + "\n" + imgEntry + "\n");
+    const { evs } = await runClaudeSource(root, defs);
+    const tr = evs.find((e) => e.kind === "tool_result");
+    check("image result priced by display pixels, not base64 length",
+      tr && Math.abs(tr.tokens - Math.round(1000 * 1000 / 750)) <= 1,
+      `tokens=${tr?.tokens} bytes=${tr?.bytes}`);
+    check("image byte size still recorded separately", tr && tr.bytes > 500_000);
+    check("image token estimate is far below the naive text estimate",
+      tr && tr.tokens < tr.bytes / 4 / 50, `tokens=${tr?.tokens} naive=${tr && tr.bytes / 4}`);
+    await rm(root, { recursive: true, force: true });
+  }
+
+  {
+    // Non-image results must still use the text estimate.
+    const root = await tmp();
+    await mkdir(join(root, "projects", "p1"), { recursive: true });
+    const textEntry = JSON.stringify({
+      type: "user", timestamp: "2026-08-01T10:00:00.000Z", sessionId: "s1",
+      message: { content: [{ type: "tool_result", tool_use_id: "t2" }] },
+      toolUseResult: { stdout: "x".repeat(40_000), stderr: "" },
+    });
+    await writeFile(join(root, "projects", "p1", "s1.jsonl"), textEntry + "\n");
+    const { evs } = await runClaudeSource(root, defs);
+    const tr = evs.find((e) => e.kind === "tool_result");
+    check("text result still estimated at ~4 bytes/token",
+      tr && Math.abs(tr.tokens - tr.bytes / 4) <= 2, `tokens=${tr?.tokens} bytes=${tr?.bytes}`);
+    await rm(root, { recursive: true, force: true });
   }
 
   // --- since parsing ---------------------------------------------------

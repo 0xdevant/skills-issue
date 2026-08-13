@@ -105,7 +105,7 @@ async function auditSource(detected, opt, pricing) {
     capabilities: def.capabilities || [],
     sourceName: def.name,
     longSessionTurns: DEFAULTS.longSessionTurns,
-    bigToolOutputBytes: DEFAULTS.bigToolOutputBytes,
+    bigToolOutputTokens: DEFAULTS.bigToolOutputTokens,
     redundantReadThreshold: DEFAULTS.redundantReadThreshold,
   });
 

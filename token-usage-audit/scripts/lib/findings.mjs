@@ -26,7 +26,7 @@ const kt = (n) => `${(n / 1000).toFixed(0)}k`;
 export const DEFAULTS = {
   targetContext: 120_000,
   longSessionTurns: 150,
-  bigToolOutputBytes: 20_000,
+  bigToolOutputTokens: 5_000,
   redundantReadThreshold: 3,
 };
 
@@ -286,7 +286,7 @@ define({
   requires: { caps: ["tool_results"] },
   overlaps: ["context-bloat"],
   compute(agg, opt) {
-    const big = agg.bigOutputs.filter((o) => o.bytes >= opt.bigToolOutputBytes);
+    const big = agg.bigOutputs.filter((o) => o.tokens >= opt.bigToolOutputTokens);
     if (!big.length) return null;
     const rate = cacheReadRate(opt.pricing, agg.dominantModel) ?? 0;
     let cost = 0;
@@ -296,7 +296,7 @@ define({
       if (!s) continue;
       // Carried only until the next compaction, not blindly to the end of the session.
       const remaining = Math.max(0, (o.carriedUntil ?? s.turns) - (o.turnAt || 0));
-      const c = (o.bytes / 4) * remaining * rate; // ~4 bytes/token
+      const c = o.tokens * remaining * rate;
       cost += c;
       rows.push({ ...o, remaining, c });
     }
@@ -305,15 +305,15 @@ define({
     return {
       cost,
       estimate: true,
-      headline: `${big.length} tool results over ${(opt.bigToolOutputBytes / 1000).toFixed(0)}kB stayed in context for the rest of their session.`,
+      headline: `${big.length} tool results over ${(opt.bigToolOutputTokens / 1000).toFixed(0)}k tokens stayed in context for the rest of their session.`,
       detail:
         "A large output is not paid once. It is written to cache once and then re-read on every " +
         "subsequent turn of that session, so its true cost scales with how early it landed.",
       table: rows.slice(0, opt.top).map((r) => ({
         tool: r.tool || "?",
-        target: r.target ? r.target.split("/").pop().slice(0, 32) : "(inline output)",
-        kb: (r.bytes / 1024).toFixed(0),
-        turns_carried: r.remaining, cost: usd(r.c),
+        kind: r.media === "image" ? "image" : "text",
+        target: r.target ? r.target.split("/").pop().slice(0, 28) : "(inline)",
+        tokens: r.tokens, turns_carried: r.remaining, cost: usd(r.c),
       })),
       fix: {
         kind: "behavioral",
@@ -343,7 +343,7 @@ define({
     }
     if (!rows.length) return null;
     const rate = cacheReadRate(opt.pricing, agg.dominantModel) ?? 0;
-    const cost = capToPool(sum(rows.map((r) => ((r.bytes / 4) * (r.count - 1)) * rate)), agg);
+    const cost = capToPool(sum(rows.map((r) => (r.tokens / r.count) * (r.count - 1) * rate)), agg);
     rows.sort((a, b) => b.count - a.count);
     return {
       cost,
@@ -353,7 +353,7 @@ define({
         "Each re-read adds another full copy of the file to the context, which then rides along on " +
         "every later turn. Overlaps with tool-output-waste and is excluded from the headline total.",
       table: rows.slice(0, opt.top).map((r) => ({
-        file: r.target.split("/").pop(), reads: r.count, kb_each: (r.bytes / r.count / 1024).toFixed(0),
+        file: r.target.split("/").pop(), reads: r.count, tokens_each: Math.round(r.tokens / r.count),
       })),
       fix: { kind: "behavioral", summary: "Re-reading a file you already read adds a copy, not a refresh.", actions: [] },
     };
