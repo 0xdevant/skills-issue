@@ -21,6 +21,7 @@ import { loadPricing, usd, cacheReadRate } from "./lib/cost.mjs";
 import { loadSourceDefs, detectSources, readSource, parseSince, expandPath } from "./lib/sources.mjs";
 import { createAggregator } from "./lib/aggregate.mjs";
 import { fingerprint } from "./lib/fingerprint.mjs";
+import { loadInsights } from "./lib/insights.mjs";
 
 const CONFIG_DIR = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
 const STATE_DIR = join(CONFIG_DIR, "token-usage-audit");
@@ -109,7 +110,8 @@ async function analyze(opt) {
     // config-only fixes still work.
     src = { def: defs.find((d) => d.name === "claude-code") ?? defs[0], files: [] };
   }
-  return { pricing, src, agg: agg.finalize(), fp: await fingerprint(src.def), hasLogs: withLogs.length > 0 };
+  return { pricing, src, agg: agg.finalize(), fp: await fingerprint(src.def),
+           hasLogs: withLogs.length > 0, insights: await loadInsights() };
 }
 
 // ---------------------------------------------------------------- fixes
@@ -233,6 +235,74 @@ function buildFixes(ctx) {
     },
     async run() {
       return "reported only — no file changed (model choice is a quality judgement, not a metric)";
+    },
+  });
+
+  // ---- RISKY: adopt the CLAUDE.md sections /insights recommends
+  //
+  // /insights analyses workflow friction and proposes concrete CLAUDE.md blocks, but
+  // leaves you to copy them by hand. This applies them, deduped against what is
+  // already there, because appending a section you already have is how instruction
+  // files bloat.
+  const sugg = ctx.insights?.report?.suggestions || [];
+  fixes.push({
+    id: "insights-claude-md",
+    risk: "risky",
+    title: "Adopt the CLAUDE.md sections /insights recommends",
+    why:
+      "These come from Claude Code's own analysis of your session friction, not from " +
+      "this tool. Each one targets a failure pattern it observed. They are appended " +
+      "verbatim, so read them before confirming.",
+    available: sugg.length > 0,
+    targets: [join(CONFIG_DIR, "CLAUDE.md")],
+    async preview() {
+      if (!sugg.length) {
+        return "No /insights report found. Run /insights in Claude Code first.";
+      }
+      const cur = (await readIfExists(join(CONFIG_DIR, "CLAUDE.md"))) || "";
+      const headings = new Set(
+        [...cur.matchAll(/^##\s*(.+)$/gm)].map((m) => m[1].trim().toLowerCase())
+      );
+      const fresh = [], have = [];
+      for (const x of sugg) {
+        const key = (x.heading || "").toLowerCase();
+        (key && headings.has(key) ? have : fresh).push(x);
+      }
+      let out = `Report age: ${ctx.insights.report.ageDays < 1 ? "today" : ctx.insights.report.ageDays.toFixed(0) + "d"}\n\n`;
+      if (have.length) {
+        out += `Already present, will be skipped:\n` +
+          have.map((x) => `    ${x.heading}`).join("\n") + "\n\n";
+      }
+      if (!fresh.length) {
+        out += "Nothing new to add. Every recommended section already exists in CLAUDE.md.";
+        return out;
+      }
+      const toks = fresh.reduce((a, x) => a + Math.round(x.body.length / 4), 0);
+      out += `Would append ${fresh.length} section(s), about ${toks} resident tokens:\n\n`;
+      for (const x of fresh) {
+        const lines = x.body.split("\n").filter((l) => !/^##\s/.test(l));
+        out += `  ${bold("## " + (x.heading || "(untitled)"))}\n` +
+          lines.slice(0, 6).map((l) => "    " + l).join("\n") +
+          (lines.length > 6 ? "\n    ..." : "") + "\n\n";
+      }
+      out += `  Note: every resident token is re-read on every turn. ${toks} tokens is\n` +
+        `  roughly ${usd(toks * (agg.totalTurns || 0) * 0.5 / 1e6)} across this window.\n\n` +
+        `  ${bold("Read the body before confirming.")} Duplicate detection is by section\n` +
+        `  heading only, so a new section can still repeat rules you already have under\n` +
+        `  a different heading. Trim those by hand rather than letting them accumulate.`;
+      return out;
+    },
+    async run() {
+      const path = join(CONFIG_DIR, "CLAUDE.md");
+      const cur = (await readIfExists(path)) || "# Global preferences\n";
+      const headings = new Set(
+        [...cur.matchAll(/^##\s*(.+)$/gm)].map((m) => m[1].trim().toLowerCase())
+      );
+      const fresh = sugg.filter((x) => !(x.heading && headings.has(x.heading.toLowerCase())));
+      if (!fresh.length) return "nothing to add; every recommended section already exists";
+      const add = fresh.map((x) => x.body.trim()).join("\n\n");
+      await writeFile(path, cur.replace(/\s*$/, "") + "\n\n" + add + "\n");
+      return `appended ${fresh.length} section(s) to ${path}: ${fresh.map((x) => x.heading).join(", ")}`;
     },
   });
 

@@ -460,11 +460,108 @@ define({
 
 // ----------------------------------------------------------------
 
+// ---------------------------------------------------------------- 12
+
+define({
+  id: "expensive-failures",
+  title: "Sessions that cost the most and still went badly",
+  builtin: "/insights produced the outcome labels this joins against",
+  requires: { insights: true },
+  overlaps: ["context-bloat"],
+  compute(agg, opt) {
+    const j = opt.join;
+    if (!j || !j.rows.length) return null;
+    const bad = j.rows.filter((r) => r.outcome === "not_achieved" || r.outcome === "partially_achieved");
+    if (!bad.length) return null;
+    bad.sort((a, b) => b.cost - a.cost);
+    const cost = sum(bad.map((r) => r.cost));
+    const perGood = j.rows.filter((r) => r.outcome === "fully_achieved");
+    const avgGood = perGood.length ? sum(perGood.map((r) => r.cost)) / perGood.length : 0;
+    const avgBad = cost / bad.length;
+    return {
+      cost,
+      estimate: false,
+      headline:
+        `${bad.length} sessions ended not or only partially achieved, costing ${usd(cost)} ` +
+        `(${usd(avgBad)} each vs ${usd(avgGood)} for a fully achieved session).`,
+      detail:
+        "This is the one number neither tool produces alone: cost is measured here, the " +
+        "outcome label comes from /insights, and they join on session id. A cheap failure " +
+        "is a bad half hour; an expensive one is the thing worth changing. " +
+        (avgBad > avgGood
+          ? "Failed sessions here cost MORE than successful ones, which usually means the " +
+            "session ran long in the wrong direction rather than stopping early."
+          : "Failed sessions cost less than successful ones, so failures are being caught early."),
+      table: bad.slice(0, opt.top).map((r) => ({
+        session: r.id.slice(0, 8), project: (r.project || "").split("/").pop(),
+        outcome: r.outcome.replace("_achieved", ""), turns: r.turns,
+        cost: usd(r.cost), friction: r.frictions.slice(0, 2).join(",") || "-",
+      })),
+      fix: {
+        kind: "review",
+        summary: "Read the brief_summary for these sessions in the insights facets.",
+        actions: ["Look for the point where the session should have been stopped or reset."],
+      },
+    };
+  },
+});
+
+// ---------------------------------------------------------------- 13
+
+define({
+  id: "cost-weighted-friction",
+  title: "Friction ranked by what it actually costs",
+  builtin: "/insights counts these frictions; this weights them by session cost",
+  requires: { insights: true },
+  overlaps: ["context-bloat"],
+  compute(agg, opt) {
+    const j = opt.join;
+    if (!j || !j.rows.length) return null;
+    const byType = new Map();
+    for (const r of j.rows) {
+      for (const f of r.frictions) {
+        const e = byType.get(f) || { sessions: 0, cost: 0, turns: 0 };
+        e.sessions++; e.cost += r.cost; e.turns += r.turns;
+        byType.set(f, e);
+      }
+    }
+    if (!byType.size) return null;
+    const rows = [...byType.entries()]
+      .map(([type, e]) => ({ type, ...e, per: e.cost / e.sessions }))
+      .sort((a, b) => b.cost - a.cost);
+    const top = rows[0];
+    return {
+      cost: 0,
+      estimate: true,
+      headline:
+        `"${top.type}" appears in ${top.sessions} sessions carrying ${usd(top.cost)} of spend ` +
+        `(${usd(top.per)} per affected session).`,
+      detail:
+        "A raw friction count treats a 20-turn annoyance the same as a 1,100-turn one. " +
+        "Weighting by the cost of the sessions each friction appeared in re-ranks them by " +
+        "what they are actually worth fixing. No saving is claimed: friction correlates " +
+        "with expensive sessions, it does not necessarily cause the expense.",
+      table: rows.slice(0, opt.top).map((r) => ({
+        friction: r.type, sessions: r.sessions, turns: r.turns,
+        total: usd(r.cost), per_session: usd(r.per),
+      })),
+      fix: { kind: "review", summary: "Address the top-weighted friction first, not the most frequent.", actions: [] },
+    };
+  },
+});
+
 export function runFindings(agg, opt) {
   const results = [];
   const skipped = [];
 
   for (const f of F) {
+    if (f.requires?.insights && !opt.join) {
+      skipped.push({
+        id: f.id, title: f.title,
+        reason: "requires /insights data — run /insights in Claude Code, then re-run this audit",
+      });
+      continue;
+    }
     const caps = f.requires?.caps || [];
     const missing = caps.filter((c) => !opt.capabilities.includes(c));
     if (missing.length) {

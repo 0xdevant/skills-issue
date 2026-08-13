@@ -14,6 +14,7 @@ import { loadPricing, usd } from "./lib/cost.mjs";
 import { loadSourceDefs, detectSources, readSource, parseSince } from "./lib/sources.mjs";
 import { createAggregator } from "./lib/aggregate.mjs";
 import { runFindings, DEFAULTS } from "./lib/findings.mjs";
+import { loadInsights, joinSessions } from "./lib/insights.mjs";
 
 const HELP = `
 token-usage-audit — where your AI coding spend actually goes
@@ -106,7 +107,7 @@ async function builtinsStatus() {
   return { insights, dir };
 }
 
-function reportBuiltins(b, hasRateLimitQuestion) {
+function reportBuiltins(b, join) {
   console.log("\n" + bold("  Corroborate with the harness's own tooling"));
   console.log(dim("    This report reads local logs. Two things it structurally cannot see:"));
   console.log(`    ${bold("/usage")}     plan limits and remaining headroom — the only source for whether any`);
@@ -120,13 +121,18 @@ function reportBuiltins(b, hasRateLimitQuestion) {
     console.log(`    ${bold("/insights")}  never run. It analyses recent sessions for workflow friction —`);
     console.log(dim("               misunderstood requests, rework — which token counts cannot show."));
   }
+  if (join) {
+    console.log(dim(`\n    Joined ${join.matched} of ${join.costed} costed sessions against /insights facets ` +
+      `(${(join.coverage * 100).toFixed(0)}% coverage).`));
+    if (join.coverage < 0.8) console.log(dim("    Below 80%: re-run /insights so the joined findings cover recent work."));
+  }
   console.log(dim("\n    Where a finding above has a cross-check line, that is the native command"));
   console.log(dim("    which confirms it independently. Trust it over this report on plan limits."));
 }
 
 // ---------------------------------------------------------------- main
 
-async function auditSource(detected, opt, pricing) {
+async function auditSource(detected, opt, pricing, insights) {
   const { def } = detected;
   const agg = createAggregator(pricing);
 
@@ -140,9 +146,11 @@ async function auditSource(detected, opt, pricing) {
   });
 
   const a = agg.finalize();
+  const join = insights?.available && def.name === "claude-code" ? joinSessions(a, insights) : null;
   const { findings, skipped, addressable } = runFindings(a, {
     ...opt,
     pricing,
+    join,
     capabilities: def.capabilities || [],
     sourceName: def.name,
     longSessionTurns: DEFAULTS.longSessionTurns,
@@ -150,7 +158,7 @@ async function auditSource(detected, opt, pricing) {
     redundantReadThreshold: DEFAULTS.redundantReadThreshold,
   });
 
-  return { def, stats, agg: a, findings, skipped, addressable };
+  return { def, stats, agg: a, findings, skipped, addressable, join };
 }
 
 function report(res, opt) {
@@ -253,7 +261,8 @@ async function main() {
   }
 
   const results = [];
-  for (const t of targets) results.push(await auditSource(t, opt, pricing));
+  const insights = await loadInsights();
+  for (const t of targets) results.push(await auditSource(t, opt, pricing, insights));
 
   if (opt.json) {
     console.log(JSON.stringify({
@@ -275,7 +284,7 @@ async function main() {
   }
 
   for (const r of results) report(r, opt);
-  if (results.some((r) => r.def.name === "claude-code")) reportBuiltins(await builtinsStatus());
+  if (results.some((r) => r.def.name === "claude-code")) reportBuiltins(await builtinsStatus(), results.find((r) => r.join)?.join);
   console.log("\n" + dim("  Dollar figures are API list-price equivalents, not a bill." +
     "\n  Next: node scripts/benchmark.mjs snapshot --label before   (then apply fixes, then verify)\n"));
 }
