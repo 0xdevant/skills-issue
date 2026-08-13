@@ -12,7 +12,7 @@
     "UNVERIFIED: written from the documented rollout-log shape, not confirmed against a",
     "real install (Codex CLI was not present on the authoring machine). Field paths are",
     "the most likely ones and use `paths` fallbacks. If audit.mjs reports 0 records for",
-    "this source while ~/.codex/sessions has data, fix the paths below and send a PR —",
+    "this source while ~/.codex/sessions has data, fix the paths below and send a PR , ",
     "run with --debug-sample to print the first unmatched line."
   ],
   "records": {

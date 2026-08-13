@@ -5,7 +5,7 @@ safely, and **prove** the saving with a benchmark that doesn't lie to you.
 
 > LLM **token consumption and cost**. Not crypto tokens, not auth tokens.
 
-Works with any model — Claude, GPT, Gemini, local — via declarative source mappings.
+Works with any model, Claude, GPT, Gemini, local, via declarative source mappings.
 Reads local logs only. Nothing is uploaded. Zero npm dependencies, Node ≥ 18.
 
 ```
@@ -14,7 +14,7 @@ Reads local logs only. Nothing is uploaded. Zero npm dependencies, Node ≥ 18.
 
   Estimated spend
     total          $2645   (~$64.27/day)
-    addressable    $1031   39% — sum of non-overlapping findings below
+    addressable    $1031   39%, sum of non-overlapping findings below
 
   1. Sessions that never reset  $2421 [overlaps: context-bloat]
      27 sessions ran ≥150 turns and account for 92% of all spend.
@@ -31,9 +31,9 @@ and they are authoritative where this tool cannot see:
 
 | Built-in | What it gives you | This tool cannot |
 |---|---|---|
-| `/usage` | Plan limits and remaining headroom; usage attributed by skill, subagent and MCP server; behaviour flags for long context and cache misses | see plan limits at all — local logs do not record them |
+| `/usage` | Plan limits and remaining headroom; usage attributed by skill, subagent and MCP server; behaviour flags for long context and cache misses | see plan limits at all, local logs do not record them |
 | `/context` | Live breakdown of what is in the context window right now | show you the current session |
-| `/insights` | Workflow friction across recent sessions — misunderstood requests, rework | measure anything that is not a token |
+| `/insights` | Workflow friction across recent sessions, misunderstood requests, rework | measure anything that is not a token |
 
 If `/usage` says you are nowhere near your limits and nothing is flagged, you probably
 do not need this tool. That is a real answer, and it is the one you should act on.
@@ -42,11 +42,11 @@ do not need this tool. That is a real answer, and it is the one you should act o
 
 - **A recommended `autoCompactWindow`**, modelled against your own sessions with
   compaction's own cost netted off. Nothing built-in tells you which value to pick.
-- **Per-session cost ranking** — which session, which project, how many turns, peak
+- **Per-session cost ranking**: which session, which project, how many turns, peak
   context. `/usage` attributes by category, not by session.
 - **A before/after benchmark** that separates deterministic config effects from
   workload-confounded trends, and verifies its own prediction.
-- **Other harnesses** — Codex, Gemini, OpenCode (mappings currently unverified).
+- **Other harnesses**: Codex, Gemini, OpenCode (mappings currently unverified).
 
 Every finding it prints carries a `cross-check` line naming the native command that
 confirms it independently. Where they disagree, believe the built-in.
@@ -54,7 +54,7 @@ confirms it independently. Where they disagree, believe the built-in.
 ## Why this exists
 
 Most token-optimization advice targets cache hit rate. On real data that is usually
-already solved — the machine this was built against had a **97% hit rate** and still
+already solved, the machine this was built against had a **97% hit rate** and still
 spent thousands, because 4.9 billion cache-*read* tokens were re-reading contexts that
 had grown to 800k. The dominant lever is **how big the context is on every turn**, and
 almost nothing measures that.
@@ -75,14 +75,14 @@ Install the "token-usage-audit" skill from https://github.com/0xdevant/skills-is
      Cursor       ~/.cursor/skills/token-usage-audit/
    If you have no skills directory, keep the clone somewhere stable and read its
    SKILL.md when I ask about token usage or AI cost.
-   Use `rsync -a --delete`, not `cp -r` — cp nests the folder on re-install.
+   Use `rsync -a --delete`, not `cp -r`, cp nests the folder on re-install.
 3. Verify: run `node <that-path>/scripts/audit.mjs --list-sources` and show me
    the output. It should list which agent logs it found on this machine.
 4. Then run `node <that-path>/scripts/audit.mjs --since 30d` and summarise the
    findings for me.
 
 Requirements: Node >= 18 already on PATH. There is nothing to build and no npm
-install — the skill has zero dependencies. Do not run anything that uploads my
+install, the skill has zero dependencies. Do not run anything that uploads my
 logs anywhere; this tool is local-only by design.
 ```
 
@@ -94,7 +94,7 @@ rsync -a --delete skills-issue/token-usage-audit/ <your-skills-dir>/token-usage-
 node <your-skills-dir>/token-usage-audit/scripts/audit.mjs --list-sources
 ```
 
-**It needs no skills directory at all.** The scripts are an ordinary CLI — run them
+**It needs no skills directory at all.** The scripts are an ordinary CLI, run them
 straight from the clone:
 
 ```bash
@@ -112,8 +112,8 @@ node scripts/audit.mjs --list-sources       # what logs were found
 node scripts/audit.mjs --json               # machine-readable
 
 node scripts/benchmark.mjs snapshot --label before
-node scripts/benchmark.mjs verify           # after one new session — the proof
-node scripts/benchmark.mjs compare          # after ~a week — trends
+node scripts/benchmark.mjs verify           # after one new session, the proof
+node scripts/benchmark.mjs compare          # after ~a week, trends
 
 node scripts/apply.mjs list                 # available fixes, by risk
 node scripts/apply.mjs apply context-meter  # safe: live context + cost in the status line
@@ -127,10 +127,10 @@ Comparing total spend before and after a change produces a number that is domina
 whatever you happened to work on that week. It looks authoritative and means nothing.
 **This tool refuses to print it.** Instead:
 
-### Class A — attributable
+### Class A - attributable
 
 Derived from a *configuration fingerprint*: instruction files, agent/skill/command
-definitions, MCP servers. Deterministic and confound-free — shrink the always-resident
+definitions, MCP servers. Deterministic and confound-free, shrink the always-resident
 prefix by N tokens and every future turn reads N fewer tokens.
 
 ```
@@ -142,7 +142,7 @@ real measured cache write from a session that started after the change, and repo
 error. If the fingerprint estimate is wrong, verify says so and tells you to trust the
 measurement.
 
-### Class B — observational
+### Class B - observational
 
 Normalized ratios over equal windows: median context per turn, turns per session, cost
 per turn, compactions per session. Always confounded by workload, always labelled, and
@@ -156,7 +156,7 @@ tells you the numbers aren't comparable.
 
 | Finding | Needs | What it catches |
 |---|---|---|
-| context-bloat | cache reads | Oversized context re-read every turn — usually the top item |
+| context-bloat | cache reads | Oversized context re-read every turn, usually the top item |
 | session-sprawl | session ids | Sessions that never reset |
 | compaction-pressure | compaction events | Paying full price for context about to be discarded |
 | model-routing | model ids | Spend concentrated in expensive tiers |
@@ -169,7 +169,7 @@ tells you the numbers aren't comparable.
 | wasted-turns | error records | Errors and retries that still paid for context |
 
 **Findings declare what they need.** A source that doesn't record cache reads gets the
-cache findings *skipped with a stated reason* — never a confident zero. That gate is
+cache findings *skipped with a stated reason*, never a confident zero. That gate is
 what makes "works with any harness" an honest claim rather than a marketing one.
 
 ## Supported sources
@@ -184,7 +184,7 @@ what makes "works with any harness" an honest claim rather than a marketing one.
 | `aider` | unverified | Aider does not persist structured token counts by default |
 
 Unverified mappings print a warning with their output. They were written from
-documented log shapes but never run against real data — if one reports zero records
+documented log shapes but never run against real data, if one reports zero records
 while the tool clearly has logs, the mapping is wrong, not your usage. PRs very welcome.
 
 ## Pricing
@@ -197,7 +197,7 @@ produce confidently wrong dollars for most users:
 |---|---|
 | Anthropic | Explicit writes at a TTL-dependent premium (5m 1.25×, 1h 2×), reads 0.1× |
 | OpenAI | Automatic caching: discounted cached-input rate, **no write charge** |
-| Google | Cached-content rate **plus per-hour storage**, which logs don't record — reported as a gap |
+| Google | Cached-content rate **plus per-hour storage**, which logs don't record, reported as a gap |
 | Local | Zero token cost; still analyzed for context bloat |
 
 Models absent from the file are reported as **unpriced** with their token volume. They
@@ -215,7 +215,7 @@ Verified against 287 real transcripts (243 MB):
   block (`text`, `thinking`, `tool_use`), each repeating the *same* usage object. On the
   test corpus 52% of entries were duplicates, and a check across every repeated
   `message.id` found **zero** usage mismatches. Without dedup every number roughly doubles.
-- `usage.iterations[]` must not be summed — the top level already totals it.
+- `usage.iterations[]` must not be summed, the top level already totals it.
 - `<synthetic>` model entries are API-error placeholders and are excluded.
 - `isSidechain` is `false` on every entry and cannot be used to find subagent work.
 - Findings that decompose cache-read spend are capped at the measured pool, so

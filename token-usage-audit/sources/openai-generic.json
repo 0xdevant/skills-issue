@@ -14,7 +14,7 @@
     "usage objects, one JSON per line. Point it at your logs with:",
     "  AGENT_TOKEN_AUDIT_LOGS=/path/to/logs node scripts/audit.mjs --source openai-generic",
     "OpenAI bills cached input at a discounted rate with NO separate write charge, so",
-    "only cache_read_tokens is mapped — cache_write_tokens stays zero by design and the",
+    "only cache_read_tokens is mapped, cache_write_tokens stays zero by design and the",
     "cache-TTL finding is correctly absent from this source's capabilities."
   ],
 

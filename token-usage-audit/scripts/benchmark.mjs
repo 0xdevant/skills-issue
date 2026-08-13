@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * token-usage-audit — benchmark
+ * token-usage-audit, benchmark
  *
  * The naive way to answer "did this save money" is to compare total spend before
  * and after. That number is dominated by what you happened to work on, so it looks
@@ -8,12 +8,12 @@
  *
  * Instead there are two classes, reported separately and never blended:
  *
- *   CLASS A — attributable. Derived from the configuration fingerprint, not from
+ *   CLASS A, attributable. Derived from the configuration fingerprint, not from
  *   usage. Deterministic: shrink the resident prefix by N tokens and every future
  *   turn reads N fewer tokens. `verify` checks the prediction against a real
  *   measured cache write from a session that started after the change.
  *
- *   CLASS B — observational. Normalized ratios over equal-length windows. Always
+ *   CLASS B, observational. Normalized ratios over equal-length windows. Always
  *   confounded by workload; labelled as such; never the headline.
  */
 
@@ -30,7 +30,7 @@ const STATE_DIR = join(process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude
 const BASELINE_DIR = join(STATE_DIR, "baselines");
 
 const HELP = `
-token-usage-audit — benchmark
+token-usage-audit, benchmark
 
   node scripts/benchmark.mjs snapshot [--label before] [--source <name>]
   node scripts/benchmark.mjs compare  [--before latest|<file>] [--window 7d]
@@ -125,7 +125,7 @@ async function listBaselines() {
 async function loadBaseline(ref) {
   if (!ref || ref === "latest") {
     const all = await listBaselines();
-    if (!all.length) throw new Error("no baselines stored — run `benchmark.mjs snapshot --label before` first");
+    if (!all.length) throw new Error("no baselines stored, run `benchmark.mjs snapshot --label before` first");
     return JSON.parse(await readFile(all[all.length - 1], "utf8"));
   }
   return JSON.parse(await readFile(expandPath(ref) || ref, "utf8"));
@@ -165,7 +165,7 @@ async function cmdSnapshot(opt) {
 
   console.log(`\n${bold("Baseline recorded")}  ${dim(path)}\n`);
   if (fp.supported) {
-    console.log(bold("  Class A — resident prefix (attributable, confound-free)"));
+    console.log(bold("  Class A, resident prefix (attributable, confound-free)"));
     console.log(`    total resident        ${kt(fp.total_tokens)} tokens (est.)`);
     for (const [label, v] of Object.entries(fp.by_label)) {
       console.log(`      ${label.padEnd(20)} ${String(v.files).padStart(3)} files  ${kt(v.tokens).padStart(7)}`);
@@ -179,7 +179,7 @@ async function cmdSnapshot(opt) {
     console.log(dim(`  Class A unavailable: ${fp.reason}`));
   }
 
-  console.log("\n" + bold("  Class B — normalized usage (workload-confounded)"));
+  console.log("\n" + bold("  Class B, normalized usage (workload-confounded)"));
   console.log(`    median context/turn   ${kt(obs.median_context_per_turn)}`);
   console.log(`    median turns/session  ${obs.median_turns_per_session}`);
   console.log(`    cost/turn             ${usd(obs.cost_per_turn)}`);
@@ -204,11 +204,11 @@ async function cmdCompare(opt) {
 
   console.log(`\n${bold("Comparison")}  ${dim(`baseline "${before.label}" taken ${before.taken_at}`)}\n`);
 
-  console.log(bold("  ══ CLASS A — attributable ══") + dim("  deterministic; not affected by what you worked on"));
+  console.log(bold("  ══ CLASS A, attributable ══") + dim("  deterministic; not affected by what you worked on"));
   if (!fpDiff.supported) {
     console.log(dim("    unavailable for this source"));
   } else if (!fpDiff.delta_tokens) {
-    console.log("    Resident prefix unchanged — no attributable saving to claim.");
+    console.log("    Resident prefix unchanged, no attributable saving to claim.");
   } else {
     const dir = fpDiff.delta_tokens < 0 ? "smaller" : "LARGER";
     console.log(`    Resident prefix ${kt(before.fingerprint.total_tokens)} → ${kt(fpDiff.after_tokens)} tokens (${dir} by ${kt(Math.abs(fpDiff.delta_tokens))})`);
@@ -224,11 +224,11 @@ async function cmdCompare(opt) {
     console.log(dim("\n    Run `verify` to check this prediction against a real measured session."));
   }
 
-  console.log("\n" + bold("  ══ CLASS B — observational ══") + dim("  CONFOUNDED by workload — read as a trend, not a saving"));
+  console.log("\n" + bold("  ══ CLASS B, observational ══") + dim("  CONFOUNDED by workload, read as a trend, not a saving"));
   const b = before.observational, a = afterObs;
   const row = (label, bv, av, fmt = (x) => x.toFixed(0)) => {
     const delta = av - bv;
-    const pctv = bv ? ((delta / bv) * 100).toFixed(0) : "—";
+    const pctv = bv ? ((delta / bv) * 100).toFixed(0) : ", ";
     console.log(`    ${label.padEnd(24)} ${fmt(bv).padStart(10)} → ${fmt(av).padStart(10)}   ${(delta > 0 ? "+" : "") + pctv}%`);
   };
   row("median context/turn", b.median_context_per_turn, a.median_context_per_turn, kt);
@@ -245,7 +245,7 @@ async function cmdCompare(opt) {
   if (ratio < 0.5 || ratio > 2) {
     console.log(`\n    ${bold("⚠")} Window sizes differ by more than 2x. These Class B deltas are not comparable.`);
   }
-  console.log("\n" + dim("  No headline saving is reported from Class B alone — by design.\n"));
+  console.log("\n" + dim("  No headline saving is reported from Class B alone, by design.\n"));
 }
 
 async function cmdVerify(opt) {
@@ -295,7 +295,7 @@ async function cmdVerify(opt) {
     console.log(`\n  ${bold("✓")} Measurement confirms the projection within 15%.`);
   } else {
     console.log(`\n  ${bold("✗")} Measurement diverges from the projection by ${absPct.toFixed(0)}%.`);
-    console.log(dim("    The resident prefix contains more than the files on disk — MCP tool schemas and"));
+    console.log(dim("    The resident prefix contains more than the files on disk, MCP tool schemas and"));
     console.log(dim("    the harness's own system prompt are counted here but not in the fingerprint."));
     console.log(dim("    Treat the MEASURED number as truth; the fingerprint is the estimate."));
   }

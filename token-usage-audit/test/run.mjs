@@ -2,7 +2,7 @@
 /**
  * Test suite. Zero dependencies, run with: node test/run.mjs
  *
- * Each test builds a real temp log tree and drives the real code paths — there are
+ * Each test builds a real temp log tree and drives the real code paths, there are
  * no mocks, because the failure mode that matters here is "the mapping silently
  * matched nothing", which a mock would hide.
  */
@@ -277,7 +277,7 @@ async function main() {
     const root = await tmp();
     await mkdir(join(root, "projects", "p1"), { recursive: true });
     // A 1000x1000 image is ~1333 tokens. Its base64 payload is ~600k chars, which
-    // as text would read as ~150k tokens — a 100x overstatement.
+    // as text would read as ~150k tokens, a 100x overstatement.
     const imgEntry = JSON.stringify({
       type: "user", timestamp: "2026-08-01T10:00:00.000Z", sessionId: "s1",
       message: { content: [{ type: "tool_result", tool_use_id: "t1" }] },

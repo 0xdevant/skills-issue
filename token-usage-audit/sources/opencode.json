@@ -10,7 +10,7 @@
   "capabilities": ["cache"],
   "_notes": [
     "UNVERIFIED: not confirmed against a real install. OpenCode is multi-provider, so",
-    "provider_hint is null and the model id alone drives pricing — which is exactly what",
+    "provider_hint is null and the model id alone drives pricing, which is exactly what",
     "the provider `match` prefixes in pricing.json are for."
   ],
   "records": {

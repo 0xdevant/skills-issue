@@ -4,7 +4,7 @@
  * Providers do not bill caching the same way, so there is no single formula here.
  * Each provider declares a `cache_model` in pricing.json and gets its own branch.
  * Anything we cannot model from the log (Google's cache-storage hours, unlisted
- * models) is reported as a gap — never silently costed at zero.
+ * models) is reported as a gap, never silently costed at zero.
  */
 
 import { readFile } from "node:fs/promises";
@@ -66,7 +66,7 @@ export function resolveModel(pricing, rawModel) {
 
 /**
  * Cost one canonical usage record.
- * Returns dollar components plus `gaps` — things this record's provider bills
+ * Returns dollar components plus `gaps`, things this record's provider bills
  * but the log did not record well enough to compute.
  */
 export function costRecord(pricing, rec) {
@@ -114,7 +114,7 @@ export function costRecord(pricing, rec) {
       if (rec.cache_read_tokens && r.cache_storage_per_1m_hour) {
         gaps.push(
           `${res.model}: cache storage billed at $${r.cache_storage_per_1m_hour}/1M/hour, ` +
-            `but cache lifetime is not in the log — storage cost excluded`
+            `but cache lifetime is not in the log, storage cost excluded`
         );
       }
       break;
@@ -123,7 +123,7 @@ export function costRecord(pricing, rec) {
       break;
 
     default:
-      gaps.push(`unknown cache_model "${res.cacheModel}" — cache tokens excluded from cost`);
+      gaps.push(`unknown cache_model "${res.cacheModel}", cache tokens excluded from cost`);
   }
 
   const total = input + output + cacheRead + cacheWrite;
@@ -141,7 +141,7 @@ export function totalTokens(rec) {
   );
 }
 
-/** Effective $/token for cache reads — used to price "excess context" findings. */
+/** Effective $/token for cache reads, used to price "excess context" findings. */
 export function cacheReadRate(pricing, model) {
   const res = resolveModel(pricing, model);
   if (res.unpriced) return null;

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "_comment": [
     "Rates are USD per 1,000,000 tokens. Every provider block carries source_url and",
-    "fetched_at — rates must be copied from the cited page, never written from memory.",
+    "fetched_at, rates must be copied from the cited page, never written from memory.",
     "Models absent from this file are reported as UNPRICED. They are never costed at zero,",
     "because a silent zero understates spend and is worse than an admitted gap.",
     "Override the whole file with: audit.mjs --pricing <file>"
@@ -11,7 +11,7 @@
   "cache_models": {
     "explicit_write_ttl": "Cache writes are billed separately at a TTL-dependent premium, reads at a discount. Requires cache_write_tokens split by TTL. (Anthropic)",
     "discounted_read": "Caching is automatic. Cached input is billed at a lower per-token rate; there is NO separate write charge. cache_write_tokens is ignored. (OpenAI)",
-    "cached_content_plus_storage": "Cached content is billed at a discounted read rate PLUS a per-hour storage charge on the cached bytes. Storage cost needs cache lifetime, which harness logs rarely record — it is reported separately as unmodelled rather than guessed. (Google)",
+    "cached_content_plus_storage": "Cached content is billed at a discounted read rate PLUS a per-hour storage charge on the cached bytes. Storage cost needs cache lifetime, which harness logs rarely record, it is reported separately as unmodelled rather than guessed. (Google)",
     "none": "No cache billing. Used for local/self-hosted models, where tokens are free but context bloat still costs wall-clock time and VRAM."
   },
 
@@ -85,7 +85,7 @@
       "fetched_at": "2026-08-13",
       "match": ["gemini-", "google.", "models/gemini"],
       "_comment": [
-        "Standard tier only. Batch/Flex/Priority tiers are not modelled — harness logs do not",
+        "Standard tier only. Batch/Flex/Priority tiers are not modelled, harness logs do not",
         "record the tier. cache_storage_per_1m_hour is billed per hour the cache lives, which",
         "needs a lifetime the logs do not record; it is surfaced as unmodelled, not guessed.",
         "Models with length-dependent pricing list the <=200k rate and set tiered_pricing."

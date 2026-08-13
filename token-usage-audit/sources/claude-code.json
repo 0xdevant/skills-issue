@@ -10,11 +10,11 @@
 
   "_notes": [
     "Parsing rules below were verified against 287 real transcripts (243 MB). Each one",
-    "is load-bearing — getting any of them wrong invalidates every number downstream:",
-    "  * dedup_key message.id — resumed sessions duplicate entries across files.",
+    "is load-bearing, getting any of them wrong invalidates every number downstream:",
+    "  * dedup_key message.id, resumed sessions duplicate entries across files.",
     "  * message.usage.iterations[] is NOT summed; the top-level usage already totals",
     "    the per-API-call breakdown, so adding both double-counts.",
-    "  * model '<synthetic>' is excluded — API-error placeholders with no real cost.",
+    "  * model '<synthetic>' is excluded, API-error placeholders with no real cost.",
     "  * isSidechain is false on every entry in this version and cannot be used to find",
     "    subagent work; that comes from toolUseResult on Task results (see events)."
   ],

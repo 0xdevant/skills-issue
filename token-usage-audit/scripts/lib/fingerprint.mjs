@@ -3,7 +3,7 @@
  *
  * Measures what every request carries before any work happens: instruction files,
  * agent/skill/command definitions, configured MCP servers. This is the ONLY part of
- * the benchmark that is confound-free — it is a property of your configuration, not
+ * the benchmark that is confound-free, it is a property of your configuration, not
  * of what you happened to work on that week.
  */
 
@@ -56,7 +56,7 @@ async function countMcpTools(settingsPaths) {
       for (const key of ["mcpServers", "mcp_servers"]) {
         if (json[key]) for (const name of Object.keys(json[key])) servers.add(name);
       }
-    } catch { /* absent or unreadable — reported as zero, which is accurate here */ }
+    } catch { /* absent or unreadable, reported as zero, which is accurate here */ }
   }
   return [...servers];
 }
@@ -77,7 +77,7 @@ function residentBytes(content, mode) {
   return (desc ? desc[1].trim().length : 0) + nameLen + 16;
 }
 
-/** Skills switched off in settings are not loaded at all — they cost nothing. */
+/** Skills switched off in settings are not loaded at all, they cost nothing. */
 async function disabledSkills(settingsPaths) {
   const off = new Set();
   for (const raw of settingsPaths) {
@@ -112,7 +112,7 @@ export async function fingerprint(sourceDef) {
     // A skill directory's name is its identifier for skillOverrides.
     const skillName = /\/skills\/([^/]+)\/SKILL\.md$/.exec(p)?.[1];
     if (skillName && off.has(skillName)) {
-      excluded.push({ path: p, reason: `disabled via skillOverrides — not loaded, costs nothing` });
+      excluded.push({ path: p, reason: `disabled via skillOverrides, not loaded, costs nothing` });
       return;
     }
 
@@ -159,7 +159,7 @@ export async function fingerprint(sourceDef) {
       .map((f) => ({ ...f, name: basename(f.path) })),
     caveats: [
       `Token counts estimated at ~${BYTES_PER_TOKEN} bytes/token; exact counts need the model tokenizer.`,
-      "Agent and skill definitions count their frontmatter description ONLY — bodies load on " +
+      "Agent and skill definitions count their frontmatter description ONLY, bodies load on " +
         "demand when invoked. Counting whole files overstates the resident prefix several-fold.",
       "Skills disabled in settings are excluded entirely; they are not loaded and cost nothing.",
       "MCP tool schemas are counted by server, not by token: their size lives in the running " +

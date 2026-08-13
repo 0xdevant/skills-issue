@@ -2,8 +2,7 @@
  * Findings engine.
  *
  * Every finding declares the canonical fields and source capabilities it needs.
- * A source that cannot supply them gets the finding SKIPPED with a stated reason —
- * never a confident zero. That gate is what lets this tool claim "any harness"
+ * A source that cannot supply them gets the finding SKIPPED with a stated reason, * never a confident zero. That gate is what lets this tool claim "any harness"
  * honestly instead of quietly emitting empty reports for tools it can't read.
  *
  * Findings also declare `overlaps`: several describe the same dollars from
@@ -32,7 +31,7 @@ export const DEFAULTS = {
 
 /**
  * Cache-read spend is a single measured pool. Several findings explain *why* that
- * pool is large — they are decompositions of it, not independent savings. Capping
+ * pool is large, they are decompositions of it, not independent savings. Capping
  * each at the pool keeps a modelled estimate from claiming more than was actually
  * spent, and `overlaps` keeps them out of the headline total.
  */
@@ -90,7 +89,7 @@ define({
         actions: [
           "Start a fresh session per task; a 700-turn session pays for its own history on every turn.",
           "Install the context meter (apply.mjs does this) so growth is visible before it compounds.",
-          "Delegate wide file-reading to a subagent — its context is discarded on return.",
+          "Delegate wide file-reading to a subagent, its context is discarded on return.",
         ],
       },
     };
@@ -115,7 +114,7 @@ define({
       estimate: false,
       headline: `${long.length} sessions ran ≥${opt.longSessionTurns} turns and account for ${share.toFixed(0)}% of all spend.`,
       detail:
-        "Same dollars as context-bloat, viewed per session rather than per turn — excluded from the " +
+        "Same dollars as context-bloat, viewed per session rather than per turn, excluded from the " +
         "headline total to avoid double counting. Useful for spotting which work habits produce the bloat.",
       table: long.slice(0, opt.top).map((s) => ({
         session: s.id.slice(0, 8), project: (s.project || "").split("/").pop(),
@@ -147,7 +146,7 @@ define({
       detail:
         "Each compaction re-reads the entire context to summarize it, then re-caches the summary. " +
         "Automatic compactions in particular mean the session was already past the point where " +
-        "it should have been reset — you pay full price for context you are about to throw away.",
+        "it should have been reset, you pay full price for context you are about to throw away.",
       table: c.slice(-opt.top).map((x) => ({
         trigger: x.trigger, pre: kt(x.pre_tokens || 0), post: kt(x.post_tokens || 0),
         discarded: kt((x.pre_tokens || 0) - (x.post_tokens || 0)),
@@ -173,11 +172,11 @@ define({
     const top = rows[0];
     const cheapest = [...rows].sort((a, b) => a.perTurn - b.perTurn)[0];
     return {
-      cost: 0, // routing is a recommendation, not a measured waste — no dollars claimed
+      cost: 0, // routing is a recommendation, not a measured waste, no dollars claimed
       estimate: true,
       headline: `${top.model} is ${pct(top.cost, agg.totalCost).toFixed(0)}% of spend (${usd(top.cost)} over ${top.turns} turns, ${usd(top.perTurn)}/turn).`,
       detail:
-        `Cheapest model in use is ${cheapest.model} at ${usd(cheapest.perTurn)}/turn — a ` +
+        `Cheapest model in use is ${cheapest.model} at ${usd(cheapest.perTurn)}/turn, a ` +
         `${(top.perTurn / (cheapest.perTurn || 1)).toFixed(0)}x difference. This finding claims no ` +
         `dollar saving: whether a turn needed the expensive model is a judgement about output quality ` +
         `that usage logs cannot make. It reports the ratio; you decide.`,
@@ -230,7 +229,7 @@ define({
       headline: `${agg.subagents.length} delegations across ${rows.length} agent types, ${(sum(rows.map((r) => r.tokens)) / 1e6).toFixed(1)}M tokens.`,
       detail:
         (lowValue.length
-          ? `${lowValue.map((r) => r.agent).join(", ")} averaged under 2 tool calls per delegation — ` +
+          ? `${lowValue.map((r) => r.agent).join(", ")} averaged under 2 tool calls per delegation, ` +
             "that is the signature of work that could have been done inline without paying to " +
             "rebuild context in a fresh agent. "
           : "No agent type shows the low-tool-use signature of unnecessary delegation. ") +
@@ -267,7 +266,7 @@ define({
       estimate: true,
       headline: `Median session starts at ${kt(med)} resident tokens before any work happens.`,
       detail:
-        "This is the system prompt, tool schemas, instruction files and skill descriptions — paid " +
+        "This is the system prompt, tool schemas, instruction files and skill descriptions, paid " +
         "once as a cache write per session, then re-read on every single turn. Across " +
         `${turns} turns that resident prefix costs about ${usd(cost)}. It is also the cleanest ` +
         "benchmark target: shrink it and the saving is deterministic, not workload-dependent. " +
@@ -387,7 +386,7 @@ define({
       headline: `${pct(w1h, w5m + w1h).toFixed(0)}% of cache writes use the 1h TTL; median gap between turns is ${medGap.toFixed(0)}s.`,
       detail:
         `A 1h write costs 2x base input, a 5m write 1.25x. The 1h TTL pays off only when gaps ` +
-        `regularly exceed 5 minutes — here ${longGapShare.toFixed(0)}% of gaps do. ` +
+        `regularly exceed 5 minutes, here ${longGapShare.toFixed(0)}% of gaps do. ` +
         (longGapShare < 20 && w1h > w5m
           ? "Most turns follow quickly, so the 1h premium is largely being paid for nothing."
           : "The current mix looks reasonable for this gap distribution."),
@@ -558,7 +557,7 @@ export function runFindings(agg, opt) {
     if (f.requires?.insights && !opt.join) {
       skipped.push({
         id: f.id, title: f.title,
-        reason: "requires /insights data — run /insights in Claude Code, then re-run this audit",
+        reason: "requires /insights data, run /insights in Claude Code, then re-run this audit",
       });
       continue;
     }

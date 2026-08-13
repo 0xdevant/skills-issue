@@ -5,7 +5,7 @@
  * and how to map that harness's fields onto the canonical usage record. Adding a
  * new tool should not require writing JavaScript.
  *
- * Everything streams line by line — transcript directories reach hundreds of MB
+ * Everything streams line by line, transcript directories reach hundreds of MB
  * and must never be read whole.
  */
 
@@ -91,8 +91,8 @@ async function walkGlob(root, pattern) {
 
 /**
  * Dotted path with two extensions that log formats genuinely need:
- *   a.b.0.c                      — numeric array index
- *   content[type=tool_use].name  — first array element whose key equals a value
+ *   a.b.0.c, numeric array index
+ *   content[type=tool_use].name, first array element whose key equals a value
  * The second exists because content blocks are order-unstable: a tool_use block
  * may sit behind any number of text or thinking blocks.
  */
@@ -186,7 +186,7 @@ function applyMap(entry, map, base) {
     if (spec && typeof spec === "object" && !Array.isArray(spec)) {
       if ("const" in spec) value = spec.const;
       else {
-        // `paths` takes the first path that resolves — for harnesses that renamed a field.
+        // `paths` takes the first path that resolves, for harnesses that renamed a field.
         const paths = spec.paths || [spec.path];
         for (const p of paths) { value = getPath(entry, p); if (value != null) break; }
         if (spec.transform) {

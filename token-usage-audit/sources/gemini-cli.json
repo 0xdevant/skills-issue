@@ -11,7 +11,7 @@
   "_notes": [
     "UNVERIFIED: not confirmed against a real install. Gemini reports usage as",
     "usageMetadata with promptTokenCount / candidatesTokenCount / cachedContentTokenCount.",
-    "Google also bills cache STORAGE per hour, which the logs do not record — cost.mjs",
+    "Google also bills cache STORAGE per hour, which the logs do not record, cost.mjs",
     "surfaces that as an explicit gap rather than guessing it."
   ],
   "records": {

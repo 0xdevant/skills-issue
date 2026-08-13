@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * token-usage-audit — apply
+ * token-usage-audit, apply
  *
  * Fixes are split by reversibility, not by convenience:
- *   SAFE   — additive, self-contained, undone by deleting a key. Applied on request.
- *   RISKY  — edits content you wrote, or changes what the agent can reach. Requires
+ *   SAFE, additive, self-contained, undone by deleting a key. Applied on request.
+ *   RISKY, edits content you wrote, or changes what the agent can reach. Requires
  *            --confirm and always prints the diff first.
  *
  * Every write is backed up first and `undo` restores byte-identically. Fixes that
@@ -33,7 +33,7 @@ const green = (s) => (process.stdout.isTTY ? `\x1b[32m${s}\x1b[0m` : s);
 const red = (s) => (process.stdout.isTTY ? `\x1b[31m${s}\x1b[0m` : s);
 
 const HELP = `
-token-usage-audit — apply
+token-usage-audit, apply
 
   node scripts/apply.mjs list                    what can be fixed, and how risky
   node scripts/apply.mjs apply <id> [--confirm]  apply a fix (risky ones need --confirm)
@@ -106,7 +106,7 @@ async function analyze(opt) {
   if (src) {
     await readSource(src, { since: parseSince("30d"), onRecord: (r) => agg.record(r), onEvent: (e) => agg.event(e) });
   } else {
-    // No logs anywhere — fall back to the harness whose config dir exists, so
+    // No logs anywhere, fall back to the harness whose config dir exists, so
     // config-only fixes still work.
     src = { def: defs.find((d) => d.name === "claude-code") ?? defs[0], files: [] };
   }
@@ -231,10 +231,10 @@ function buildFixes(ctx) {
       }
       return "Agent definitions and their measured spend:\n" + lines.join("\n") +
         "\n\n  This fix REPORTS only. Changing a model tier is a judgement about output quality" +
-        "\n  that usage data cannot make for you — edit the `model:` line yourself.";
+        "\n  that usage data cannot make for you, edit the `model:` line yourself.";
     },
     async run() {
-      return "reported only — no file changed (model choice is a quality judgement, not a metric)";
+      return "reported only, no file changed (model choice is a quality judgement, not a metric)";
     },
   });
 
@@ -309,7 +309,7 @@ function buildFixes(ctx) {
   // ---- RISKY: cap how large the context may grow before the harness compacts
   //
   // This is the one config lever that attacks context bloat directly. Hooks cannot
-  // do it — no hook can initiate a compaction, only block one — but the harness
+  // do it, no hook can initiate a compaction, only block one, but the harness
   // exposes a native window setting, and lowering it caps every session's context.
   const windowTokens = ctx.window || 200_000;
   const modelWindow = (W) => {
@@ -330,8 +330,8 @@ function buildFixes(ctx) {
     why:
       "By default the harness compacts only at the model's context limit, which on a " +
       "1M-token model means sessions can carry hundreds of thousands of tokens that " +
-      "every later turn re-reads. Lowering the window caps that. Compaction is not free — " +
-      "it re-reads the context to summarize it — but that one-off is small against " +
+      "every later turn re-reads. Lowering the window caps that. Compaction is not free, " +
+      "it re-reads the context to summarize it, but that one-off is small against " +
       "carrying the context for hundreds of turns.",
     available: agg.sessions.size > 0 && [...agg.sessions.values()].some((s) => s.peakCtx > 250_000),
     targets: [join(CONFIG_DIR, "settings.json")],
@@ -340,7 +340,7 @@ function buildFixes(ctx) {
       const rows = [400_000, 300_000, 200_000, 150_000].map(modelWindow);
       const peak = Math.max(0, ...[...agg.sessions.values()].map((s) => s.peakCtx));
       let out =
-        `Current setting: ${cur.autoCompactWindow ?? bold("unset")} — compaction happens only at the\n` +
+        `Current setting: ${cur.autoCompactWindow ?? bold("unset")}, compaction happens only at the\n` +
         `model's context limit. Measured peak context: ${(peak / 1000).toFixed(0)}k tokens.\n\n` +
         `  window   turns over   context saved   compactions   their cost      NET\n`;
       for (const r of rows) {
@@ -380,7 +380,7 @@ function buildFixes(ctx) {
     available: unusedAgents.length > 0,
     targets: unusedAgents.map((f) => f.path),
     async preview() {
-      if (!unusedAgents.length) return "Every agent definition saw at least one delegation — nothing to archive.";
+      if (!unusedAgents.length) return "Every agent definition saw at least one delegation, nothing to archive.";
       const rate = 0.5 / 1e6; // conservative: cache-read rate of a mid-tier model
       const turns = agg.totalTurns || 0;
       const rows = unusedAgents.map((f) =>
@@ -388,7 +388,7 @@ function buildFixes(ctx) {
       return `No delegations in the measured window:\n${rows.join("\n")}\n\n` +
         `  Resident total: ${unusedTokens} tokens. Across ${turns} turns that is roughly ` +
         `${usd(unusedTokens * turns * rate)}.\n` +
-        `  Files move to ${join(STATE_DIR, "archived-agents")}/ — nothing is deleted, and\n` +
+        `  Files move to ${join(STATE_DIR, "archived-agents")}/, nothing is deleted, and\n` +
         `  \`apply.mjs undo\` puts them back.\n\n` +
         `  ${bold("Judgement required:")} "unused in this window" is not "useless". An agent you\n` +
         `  invoke rarely but rely on is worth its few tokens. Archive only what you have\n` +
@@ -431,14 +431,14 @@ function buildFixes(ctx) {
         `${rows.join("\n")}\n`;
       if (fp.excluded?.length) {
         out += `\n  Excluded (not loaded, costs nothing):\n` +
-          fp.excluded.map((e) => `    ${basename(e.path)} — ${e.reason}`).join("\n") + "\n";
+          fp.excluded.map((e) => `    ${basename(e.path)}, ${e.reason}`).join("\n") + "\n";
       }
       out += `\n  ${bold("Reality check:")} if this total is small relative to your spend, config trimming\n` +
         `  is not your lever and you should ignore it. Check the audit's context findings instead.`;
       return out;
     },
     async run() {
-      return "reported only — use `prune-agents` to archive unused agents, or edit instruction files yourself";
+      return "reported only, use `prune-agents` to archive unused agents, or edit instruction files yourself";
     },
   });
 
@@ -456,14 +456,14 @@ function buildFixes(ctx) {
     available: configured.length > 0,
     targets: [join(CONFIG_DIR, "settings.json")],
     async preview() {
-      if (!configured.length) return "No MCP servers found in settings — nothing to prune.";
+      if (!configured.length) return "No MCP servers found in settings, nothing to prune.";
       return `Configured: ${configured.join(", ")}\n  Invoked in the last 30 days: ${[...invokedServers].join(", ") || "none"}\n` +
         (unused.length
           ? `  ${bold("Never invoked:")} ${unused.join(", ")}`
-          : "  Every configured server was used — nothing to prune.");
+          : "  Every configured server was used, nothing to prune.");
     },
     async run() {
-      return "reported only — disabling a server changes what the agent can reach; do it deliberately";
+      return "reported only, disabling a server changes what the agent can reach; do it deliberately";
     },
   });
 
@@ -482,7 +482,7 @@ function manualPlan(agg) {
       title: "Reset context at task boundaries",
       evidence: `${long} of ${sessions.size ?? sessions.length} sessions ran 150+ turns; peak context ${(peak / 1000).toFixed(0)}k tokens.`,
       why: "Every turn re-reads the whole conversation, so a long session pays for its own history repeatedly.",
-      action: "Start a new session when you switch tasks. Use the context meter as the trigger — reset when the bar turns red.",
+      action: "Start a new session when you switch tasks. Use the context meter as the trigger, reset when the bar turns red.",
     },
     {
       title: "Keep large outputs out of the main context",
@@ -499,7 +499,7 @@ function manualPlan(agg) {
     {
       title: "Match the model to the turn",
       evidence: [...agg.byModel.entries()].map(([m, v]) => `${m}: ${v.turns} turns`).join(", "),
-      why: "Model choice is the one lever usage data cannot decide for you — it depends on output quality, not tokens.",
+      why: "Model choice is the one lever usage data cannot decide for you, it depends on output quality, not tokens.",
       action: "Review which agent definitions pin an expensive tier, and whether the delegations they serve genuinely need it.",
     },
   ];
@@ -548,7 +548,7 @@ async function main() {
   if (cmd === "plan") {
     const plan = manualPlan(ctx.agg);
     if (opt.json) return console.log(JSON.stringify(plan, null, 2));
-    console.log("\n" + bold("Manual action plan") + dim("  — changes no script can make for you\n"));
+    console.log("\n" + bold("Manual action plan") + dim(", changes no script can make for you\n"));
     plan.forEach((p, i) => {
       console.log(`  ${i + 1}. ${bold(p.title)}`);
       console.log(dim(`     evidence: ${p.evidence}`));
@@ -564,7 +564,7 @@ async function main() {
     for (const f of fixes) {
       const tag = f.risk === "safe" ? green("[safe]") : red("[risky]");
       const avail = f.available ? "" : dim("  (not applicable here)");
-      console.log(`  ${tag} ${bold(f.id)} — ${f.title}${avail}`);
+      console.log(`  ${tag} ${bold(f.id)}, ${f.title}${avail}`);
       console.log(dim(`      ${f.why}`));
       console.log("");
     }
@@ -585,7 +585,7 @@ async function main() {
 
     if (opt.dryRun) { console.log(dim("  --dry-run: nothing written.\n")); return; }
     if (fix.risk === "risky" && !opt.confirm) {
-      console.log(`  ${bold("Not applied.")} This fix is risky — re-run with --confirm if you want it.\n`);
+      console.log(`  ${bold("Not applied.")} This fix is risky, re-run with --confirm if you want it.\n`);
       return;
     }
 

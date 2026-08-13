@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * token-usage-audit — audit
+ * token-usage-audit, audit
  *
  * Reads local agent logs, prices them per provider, and reports where the money
  * actually goes, ranked by cost, with a named fix for each finding.
@@ -17,23 +17,23 @@ import { runFindings, DEFAULTS } from "./lib/findings.mjs";
 import { loadInsights, joinSessions } from "./lib/insights.mjs";
 
 const HELP = `
-token-usage-audit — where your AI coding spend actually goes
+token-usage-audit, where your AI coding spend actually goes
 
   node scripts/audit.mjs [options]
 
-  --source <name|all>     source to audit (default: auto — every source with data)
+  --source <name|all>     source to audit (default: auto, every source with data)
   --since <7d|24h|ISO>    only consider entries newer than this
   --project <substring>   restrict to projects whose path contains this
   --top <n>               rows per table (default 10)
   --target-context <n>    working-set size for the bloat counterfactual (default ${DEFAULTS.targetContext})
   --pricing <file>        override pricing.json
-  --plan <usd/month>      you pay a flat subscription — reframe money as plan value
+  --plan <usd/month>      you pay a flat subscription, reframe money as plan value
   --json                  machine-readable output
   --list-sources          show detected sources and exit
   --help
 
 Dollar figures are API list-price EQUIVALENTS computed from local logs. If you are
-on a flat-rate subscription they are not money you spend — pass --plan <usd/month>
+on a flat-rate subscription they are not money you spend, pass --plan <usd/month>
 and they will be reported as the value you extract from your plan instead.
 `;
 
@@ -110,16 +110,19 @@ async function builtinsStatus() {
 function reportBuiltins(b, join) {
   console.log("\n" + bold("  Corroborate with the harness's own tooling"));
   console.log(dim("    This report reads local logs. Two things it structurally cannot see:"));
-  console.log(`    ${bold("/usage")}     plan limits and remaining headroom — the only source for whether any`);
+  console.log(`    ${bold("/usage")}     plan limits and remaining headroom, the only source for whether any`);
   console.log(dim("               of this matters. Also attributes usage by skill, subagent and MCP"));
   console.log(dim("               server, and flags 'long context' / 'cache misses' behaviours."));
   if (b.insights) {
     const age = b.insights.ageDays;
     console.log(`    ${bold("/insights")}  report from ${age < 1 ? "today" : `${age.toFixed(0)}d ago`} at ${b.insights.path.replace(homedir(), "~")}`);
-    if (age > 7) console.log(dim("               older than a week — re-run to reflect current habits."));
+    if (age > 7) {
+      console.log(dim("               stale. Refresh non-interactively:  claude -p \"/insights\""));
+    }
   } else {
-    console.log(`    ${bold("/insights")}  never run. It analyses recent sessions for workflow friction —`);
-    console.log(dim("               misunderstood requests, rework — which token counts cannot show."));
+    console.log(`    ${bold("/insights")}  never run. It finds workflow friction that token counts cannot.`);
+    console.log(dim("               Run it non-interactively:  claude -p \"/insights\""));
+    console.log(dim("               It costs tokens (a model analysis), so gate re-runs on age."));
   }
   if (join) {
     console.log(dim(`\n    Joined ${join.matched} of ${join.costed} costed sessions against /insights facets ` +
@@ -166,7 +169,7 @@ function report(res, opt) {
 
   console.log("\n" + bold(`═══ ${def.display_name || def.name} ═══`));
   if (def.status === "unverified") {
-    console.log(dim(`  ⚠ This source mapping is UNVERIFIED — field paths were never confirmed against a
+    console.log(dim(`  ⚠ This source mapping is UNVERIFIED, field paths were never confirmed against a
     real install. If the record count below looks wrong, the mapping is wrong, not your usage.`));
   }
 
@@ -189,24 +192,24 @@ function report(res, opt) {
     // sends people optimizing a bill they do not have.
     const months = days / 30.44;
     const planCost = opt.plan * months;
-    console.log("\n" + bold("  Plan value") + dim("  (you pay a flat subscription — these are not costs)"));
+    console.log("\n" + bold("  Plan value") + dim("  (you pay a flat subscription, these are not costs)"));
     console.log(`    subscription        ${usd(planCost)}   ${dim(`${usd(opt.plan)}/month over ${days.toFixed(0)} days`)}`);
     console.log(`    API-equivalent      ${usd(agg.totalCost)}   ${dim("what this usage would cost at list price")}`);
-    console.log(`    ${bold("value ratio")}         ${bold((agg.totalCost / planCost).toFixed(1) + "x")}   ${dim("higher is better — you are ahead by this much")}`);
+    console.log(`    ${bold("value ratio")}         ${bold((agg.totalCost / planCost).toFixed(1) + "x")}   ${dim("higher is better, you are ahead by this much")}`);
     console.log("\n" + dim("    Reducing the numbers below does NOT save you money; your plan is flat."));
     console.log(dim("    What it buys is rate-limit headroom and less context for the model to wade"));
     console.log(dim("    through. Optimize only if you hit limits or want tighter sessions."));
   } else {
-    console.log("\n" + bold("  API-equivalent value") + dim("  (list price of this usage — not a bill)"));
+    console.log("\n" + bold("  API-equivalent value") + dim("  (list price of this usage, not a bill)"));
     console.log(`    total          ${usd(agg.totalCost)}   ${dim(`(~${usd(agg.totalCost / days)}/day)`)}`);
-    console.log(`    addressable    ${usd(addressable)}   ${dim(`${((addressable / agg.totalCost) * 100).toFixed(0)}% — sum of non-overlapping findings below`)}`);
-    console.log(dim("    On a flat-rate subscription these are not money you spend — pass --plan <usd/month>."));
+    console.log(`    addressable    ${usd(addressable)}   ${dim(`${((addressable / agg.totalCost) * 100).toFixed(0)}%, sum of non-overlapping findings below`)}`);
+    console.log(dim("    On a flat-rate subscription these are not money you spend, pass --plan <usd/month>."));
   }
 
   if (agg.unpriced.size) {
-    console.log("\n" + bold("  ⚠ Unpriced models") + dim(" (excluded from every total above — never costed at zero)"));
+    console.log("\n" + bold("  ⚠ Unpriced models") + dim(" (excluded from every total above, never costed at zero)"));
     for (const [model, e] of agg.unpriced) {
-      console.log(`    ${model}: ${e.turns} turns, ${(e.tokens / 1e6).toFixed(2)}M tokens — ${e.reason}`);
+      console.log(`    ${model}: ${e.turns} turns, ${(e.tokens / 1e6).toFixed(2)}M tokens, ${e.reason}`);
     }
   }
   for (const g of agg.gaps) console.log(dim(`  ⚠ ${g}`));
@@ -246,7 +249,7 @@ async function main() {
         (d.def.status === "unverified" ? "  [unverified mapping]" : ""));
     }
     const missing = defs.filter((x) => !detected.some((d) => d.def.name === x.name));
-    for (const m of missing) console.log(dim(`${m.name.padEnd(18)}     — not installed`));
+    for (const m of missing) console.log(dim(`${m.name.padEnd(18)}, not installed`));
     return;
   }
 

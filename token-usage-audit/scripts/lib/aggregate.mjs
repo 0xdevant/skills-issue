@@ -1,7 +1,7 @@
 /**
  * Streaming aggregator: canonical records in, one summary object out.
  *
- * Memory stays flat with respect to log size — only per-session summaries and a
+ * Memory stays flat with respect to log size, only per-session summaries and a
  * bounded top-N of large tool outputs are retained, never the records themselves.
  */
 
@@ -25,7 +25,7 @@ export function createAggregator(pricing) {
     userPrompts: 0,
     totalCost: 0,
     // The measured cache-read pool. Findings that explain *why* context is large are
-    // decompositions of this number and are capped by it — the sum of explanations
+    // decompositions of this number and are capped by it, the sum of explanations
     // must never exceed the spend being explained.
     cacheReadCost: 0,
     totalTurns: 0,

@@ -12,8 +12,8 @@ frontmatter:
 
 ```
 <skill-name>/
-├── SKILL.md      # required — the agent-facing instructions
-├── README.md     # optional — human-facing docs, needed if the skill ships scripts
+├── SKILL.md      # required, the agent-facing instructions
+├── README.md     # optional, human-facing docs, needed if the skill ships scripts
 └── ...           # optional scripts/, references, data files
 ```
 
@@ -25,7 +25,7 @@ Keep it to two keys. Extra keys are client-specific and hurt portability:
 ---
 name: my-skill                 # kebab-case, matches the directory name
 description: >-
-  What it does, and — more importantly — WHEN to use it. This is the only part
+  What it does, and, more importantly, WHEN to use it. This is the only part
   always loaded into context, and it is what an agent matches against to decide
   whether to invoke the skill. Include the trigger phrases a user would actually
   say. Disambiguate if the name is overloaded.
@@ -34,7 +34,7 @@ description: >-
 
 The description earns its keep or the skill never fires. Name the situations, not the
 features. If a word in your skill name means something else in another domain, say so
-explicitly — `token-usage-audit` states it means LLM tokens, not crypto or auth tokens,
+explicitly, `token-usage-audit` states it means LLM tokens, not crypto or auth tokens,
 because this repo also contains a Solidity skill.
 
 ### Rules for skills that ship scripts
@@ -60,7 +60,7 @@ because this repo also contains a Solidity skill.
 
 ## Contributing to an existing skill
 
-Read that skill's `README.md` first — it documents the design constraints its
+Read that skill's `README.md` first, it documents the design constraints its
 maintainer is holding to. Skill-specific guides follow.
 
 ---
@@ -70,7 +70,7 @@ maintainer is holding to. Skill-specific guides follow.
 ### Adding a source mapping
 
 Adding support for a new agent or harness is **one JSON file in `sources/`**. No
-JavaScript. This is deliberate — the project should scale to tools neither the author
+JavaScript. This is deliberate, the project should scale to tools neither the author
 nor you have seen.
 
 #### The 60-second version
@@ -89,7 +89,7 @@ grep -rl 'usage\|tokens\|token_count' ~/.yourtool/ 2>/dev/null | head
 ```
 
 If nothing turns up, the honest outcome is a mapping with `"capabilities": []` that
-reports "no usable token signal" — which is still useful, because it stops users
+reports "no usable token signal", which is still useful, because it stops users
 wondering. Cursor is the worked example: its `ai-code-tracking.db` records AI-authored
 *lines* and commit attribution, with no token columns anywhere.
 
@@ -125,7 +125,7 @@ wondering. Cursor is the worked example: its `ai-code-tracking.db` records AI-au
 }
 ```
 
-### Capabilities — the important part
+### Capabilities - the important part
 
 `capabilities` is a promise about what your logs actually contain. Findings are gated on
 it: a source without `cache` gets the cache findings **skipped with a stated reason**
@@ -152,7 +152,7 @@ not sure your logs contain something, leave it out.
 | `a.items.0.name` | array index |
 | `content[type=tool_use].name` | first array element whose `type` equals `tool_use` |
 
-Content blocks are order-unstable, which is why the third form exists — a `tool_use`
+Content blocks are order-unstable, which is why the third form exists, a `tool_use`
 block can sit behind any number of `text` or `thinking` blocks.
 
 ### Map value forms
@@ -180,7 +180,7 @@ Transforms: `json_bytes`, `str_len`, `array_len`, `lower`, `basename`.
 
 #### Canonical record
 
-Map onto these fields. Anything you can't fill, leave out — defaults are zero/null,
+Map onto these fields. Anything you can't fill, leave out, defaults are zero/null,
 and findings gate on capabilities rather than on non-zero values.
 
 ```jsonc
@@ -195,7 +195,7 @@ and findings gate on capabilities rather than on non-zero values.
 ```
 
 Use `cache_write_tokens.default` unless your provider genuinely bills by TTL. For
-providers with automatic caching (OpenAI-style), map only `cache_read_tokens` — there
+providers with automatic caching (OpenAI-style), map only `cache_read_tokens`, there
 is no write charge to model, and the cost engine already knows that.
 
 #### Pricing a new provider
@@ -205,10 +205,10 @@ copied from the cited page, never written from memory.
 
 Pick the `cache_model` that matches how the provider actually bills:
 
-- `explicit_write_ttl` — separate write charge, TTL-dependent (Anthropic)
-- `discounted_read` — automatic caching, cheaper cached input, no write charge (OpenAI)
-- `cached_content_plus_storage` — discounted read plus per-hour storage (Google)
-- `none` — local/self-hosted
+- `explicit_write_ttl`, separate write charge, TTL-dependent (Anthropic)
+- `discounted_read`, automatic caching, cheaper cached input, no write charge (OpenAI)
+- `cached_content_plus_storage`, discounted read plus per-hour storage (Google)
+- `none`, local/self-hosted
 
 #### Testing
 
@@ -225,8 +225,7 @@ raw line and compare:
 head -1 ~/.mytool/sessions/*.jsonl | python3 -m json.tool | head -40
 ```
 
-Please add a test to `test/run.mjs` with a small synthetic fixture for your format —
-the suite uses real temp files and no mocks, precisely because the failure that matters
+Please add a test to `test/run.mjs` with a small synthetic fixture for your format, the suite uses real temp files and no mocks, precisely because the failure that matters
 is "the mapping silently matched nothing".
 
 #### Ground rules
@@ -234,6 +233,6 @@ is "the mapping silently matched nothing".
 The project's value rests on not overstating what it knows. PRs are held to that:
 
 - Don't declare capabilities the logs don't have.
-- Don't add pricing from memory — cite the URL.
+- Don't add pricing from memory, cite the URL.
 - Don't make a finding report zero when it means "unknown".
 - Mark a mapping `verified` only after running it against a real install.
