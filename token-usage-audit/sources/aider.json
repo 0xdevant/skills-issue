@@ -1,0 +1,27 @@
+{
+  "name": "aider",
+  "display_name": "Aider",
+  "status": "unverified",
+  "provider_hint": null,
+  "roots": ["$AIDER_HOME", "~"],
+  "glob": ".aider.llm.history",
+  "format": "jsonl",
+  "session_id_from": "filename_stem",
+  "capabilities": [],
+  "_notes": [
+    "UNVERIFIED and capability-poor by nature: Aider's history file is a prose transcript,",
+    "not structured usage. Aider prints token counts to the terminal but does not persist",
+    "them in a machine-readable form by default. Until that changes this source will",
+    "correctly report 'no usable token signal' rather than fabricate numbers.",
+    "If you run Aider with --analytics, point this mapping at that file instead."
+  ],
+  "records": {
+    "select": { "usage": "$exists" },
+    "map": {
+      "model": "model",
+      "ts": "timestamp",
+      "input_tokens": { "path": "usage.prompt_tokens", "default": 0 },
+      "output_tokens": { "path": "usage.completion_tokens", "default": 0 }
+    }
+  }
+}

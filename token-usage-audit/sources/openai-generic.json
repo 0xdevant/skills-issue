@@ -1,0 +1,33 @@
+{
+  "name": "openai-generic",
+  "display_name": "OpenAI-shaped JSONL logs",
+  "status": "verified",
+  "provider_hint": "openai",
+  "roots": ["$AGENT_TOKEN_AUDIT_LOGS"],
+  "glob": "**/*.jsonl",
+  "format": "jsonl",
+  "session_id_from": "filename_stem",
+  "capabilities": ["cache", "errors"],
+
+  "_notes": [
+    "A template for any harness that persists raw OpenAI Chat Completions / Responses",
+    "usage objects, one JSON per line. Point it at your logs with:",
+    "  AGENT_TOKEN_AUDIT_LOGS=/path/to/logs node scripts/audit.mjs --source openai-generic",
+    "OpenAI bills cached input at a discounted rate with NO separate write charge, so",
+    "only cache_read_tokens is mapped — cache_write_tokens stays zero by design and the",
+    "cache-TTL finding is correctly absent from this source's capabilities."
+  ],
+
+  "records": {
+    "select": { "usage": "$exists" },
+    "dedup_key": "id",
+    "map": {
+      "model": "model",
+      "ts": { "paths": ["created_at", "timestamp", "created"] },
+      "input_tokens": { "paths": ["usage.input_tokens", "usage.prompt_tokens"], "default": 0 },
+      "output_tokens": { "paths": ["usage.output_tokens", "usage.completion_tokens"], "default": 0 },
+      "reasoning_tokens": { "paths": ["usage.output_tokens_details.reasoning_tokens", "usage.completion_tokens_details.reasoning_tokens"], "default": 0 },
+      "cache_read_tokens": { "paths": ["usage.input_tokens_details.cached_tokens", "usage.prompt_tokens_details.cached_tokens"], "default": 0 }
+    }
+  }
+}

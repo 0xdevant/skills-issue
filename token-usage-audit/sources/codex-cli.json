@@ -1,0 +1,30 @@
+{
+  "name": "codex-cli",
+  "display_name": "OpenAI Codex CLI",
+  "status": "unverified",
+  "provider_hint": "openai",
+  "roots": ["$CODEX_HOME", "~/.codex"],
+  "glob": "sessions/**/*.jsonl",
+  "format": "jsonl",
+  "session_id_from": "filename_stem",
+  "capabilities": ["cache"],
+  "_notes": [
+    "UNVERIFIED: written from the documented rollout-log shape, not confirmed against a",
+    "real install (Codex CLI was not present on the authoring machine). Field paths are",
+    "the most likely ones and use `paths` fallbacks. If audit.mjs reports 0 records for",
+    "this source while ~/.codex/sessions has data, fix the paths below and send a PR —",
+    "run with --debug-sample to print the first unmatched line."
+  ],
+  "records": {
+    "select": { "payload.usage": "$exists" },
+    "dedup_key": "payload.id",
+    "map": {
+      "model": { "paths": ["payload.model", "model"] },
+      "ts": { "paths": ["timestamp", "payload.created_at"] },
+      "input_tokens": { "paths": ["payload.usage.input_tokens", "payload.usage.prompt_tokens"], "default": 0 },
+      "output_tokens": { "paths": ["payload.usage.output_tokens", "payload.usage.completion_tokens"], "default": 0 },
+      "reasoning_tokens": { "paths": ["payload.usage.output_tokens_details.reasoning_tokens"], "default": 0 },
+      "cache_read_tokens": { "paths": ["payload.usage.input_tokens_details.cached_tokens"], "default": 0 }
+    }
+  }
+}
