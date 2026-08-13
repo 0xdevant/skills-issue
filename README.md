@@ -62,6 +62,13 @@ of them need a build step or `npm install`.
 
 ---
 
+## Contributing
+
+New skills and improvements welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the
+skill layout, frontmatter conventions, and the rules for skills that ship scripts.
+
+---
+
 ## License
 
 MIT

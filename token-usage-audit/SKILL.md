@@ -44,13 +44,25 @@ node scripts/audit.mjs --since 30d
 Add `--source <name>` to restrict to one harness, `--project <substring>` to restrict
 to one codebase, `--json` for machine output. `--list-sources` shows what was detected.
 
-## Step 3 — Present the findings
+## Step 3 — Establish how the user actually pays, THEN present the findings
 
-Report findings in the order the tool ranks them, with the dollar figure and the
-evidence table. Three rules when relaying them:
+**Ask first if you do not know: flat-rate subscription, or API/pay-as-you-go?** This
+changes what the entire report means, and getting it wrong is the single most
+misleading thing this skill can do.
 
+- **Subscription** (Claude Pro/Max, Cursor, Copilot…): re-run with
+  `--plan <usd/month>`. The dollar figures become the *value they extract from the
+  plan*, not money they spend. Reducing them saves nothing — their bill is flat. What
+  optimization buys is rate-limit headroom and tighter sessions. Say so explicitly.
+- **API billing**: the figures approximate real money, still at list price.
+
+Report findings in the order the tool ranks them, with the figure and the evidence
+table. Rules when relaying them:
+
+- **Never call the figures "spend" for a subscription user.** They are API-equivalent
+  value. A $2,000 report against a $200 plan is a 10x return, not a problem to fix.
 - **Say "estimated"**, every time. These are list-price estimates from local logs.
-  Subscription plans, discounts and credits are not modelled. It is not a bill.
+  Discounts and credits are not modelled. It is never a bill.
 - **Respect the `[overlaps: …]` tags.** Tagged findings describe the same dollars
   from a different angle and are already excluded from the addressable total. Do not
   add them back up.
@@ -107,7 +119,8 @@ Two commands, two different guarantees. Say which is which:
 
 - **Never report a saving from Class B (observational) metrics alone.** They are
   confounded by workload. The tool refuses to print such a headline; do not add one.
-- **Never present estimated cost as a bill.**
+- **Never present estimated cost as a bill**, and never as "spend" for a subscription
+  user — most agent users are on flat-rate plans, where the figures are plan value.
 - **Never claim a finding the source cannot support.** If a harness does not log cache
   reads, say the finding is unavailable — do not report zero.
 - **Never cost an unknown model at zero.** It is reported as unpriced, by design.

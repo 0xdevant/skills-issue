@@ -1,17 +1,86 @@
-# Contributing a source
+# Contributing
+
+This repo is a collection of **portable agent skills**. Each skill is a self-contained
+folder that any agent able to read a local directory can use.
+
+---
+
+## Adding a new skill
+
+A skill is a directory at the repo root whose name matches the `name` in its
+frontmatter:
+
+```
+<skill-name>/
+├── SKILL.md      # required — the agent-facing instructions
+├── README.md     # optional — human-facing docs, needed if the skill ships scripts
+└── ...           # optional scripts/, references, data files
+```
+
+### SKILL.md frontmatter
+
+Keep it to two keys. Extra keys are client-specific and hurt portability:
+
+```yaml
+---
+name: my-skill                 # kebab-case, matches the directory name
+description: >-
+  What it does, and — more importantly — WHEN to use it. This is the only part
+  always loaded into context, and it is what an agent matches against to decide
+  whether to invoke the skill. Include the trigger phrases a user would actually
+  say. Disambiguate if the name is overloaded.
+---
+```
+
+The description earns its keep or the skill never fires. Name the situations, not the
+features. If a word in your skill name means something else in another domain, say so
+explicitly — `token-usage-audit` states it means LLM tokens, not crypto or auth tokens,
+because this repo also contains a Solidity skill.
+
+### Rules for skills that ship scripts
+
+- **Zero dependencies.** No `npm install`, no build step, no lockfile. Someone should
+  be able to clone and run.
+- **Node ≥ 18**, ESM, or another runtime already on a normal developer machine.
+- **Do not phone home.** Skills here read local state. If a skill needs the network,
+  say so loudly in its README and never upload user code or logs.
+- **Degrade honestly.** If a skill cannot determine something, it says so. It does not
+  emit a confident zero or invent a number.
+- **State your limits.** Anything unverified gets marked unverified in the output, not
+  quietly presented as fact.
+
+### Checklist
+
+1. Directory name matches frontmatter `name`.
+2. `SKILL.md` description names concrete trigger situations.
+3. Scripts run from a fresh clone with no install step.
+4. Add a row to the Skills table in the root `README.md`.
+
+---
+
+## Contributing to an existing skill
+
+Read that skill's `README.md` first — it documents the design constraints its
+maintainer is holding to. Skill-specific guides follow.
+
+---
+
+## token-usage-audit
+
+### Adding a source mapping
 
 Adding support for a new agent or harness is **one JSON file in `sources/`**. No
 JavaScript. This is deliberate — the project should scale to tools neither the author
 nor you have seen.
 
-## The 60-second version
+#### The 60-second version
 
 1. Find where your tool writes logs and confirm they contain token counts.
 2. Copy `sources/openai-generic.json` and edit the paths.
 3. Run `node scripts/audit.mjs --source <yourname>` and check the record count.
 4. Set `"status": "verified"` once you've confirmed it against a real install, and PR.
 
-## Does your tool even log tokens?
+#### Does your tool even log tokens?
 
 Check first. Many don't, and a mapping cannot invent data.
 
@@ -24,7 +93,7 @@ reports "no usable token signal" — which is still useful, because it stops use
 wondering. Cursor is the worked example: its `ai-code-tracking.db` records AI-authored
 *lines* and commit attribution, with no token columns anywhere.
 
-## The mapping file
+#### The mapping file
 
 ```jsonc
 {
@@ -109,7 +178,7 @@ Transforms: `json_bytes`, `str_len`, `array_len`, `lower`, `basename`.
 { "meta":  { "$exists": false } }
 ```
 
-## Canonical record
+#### Canonical record
 
 Map onto these fields. Anything you can't fill, leave out — defaults are zero/null,
 and findings gate on capabilities rather than on non-zero values.
@@ -129,7 +198,7 @@ Use `cache_write_tokens.default` unless your provider genuinely bills by TTL. Fo
 providers with automatic caching (OpenAI-style), map only `cache_read_tokens` — there
 is no write charge to model, and the cost engine already knows that.
 
-## Pricing a new provider
+#### Pricing a new provider
 
 Add a block to `pricing.json` with a **`source_url` and `fetched_at`**. Rates must be
 copied from the cited page, never written from memory.
@@ -141,7 +210,7 @@ Pick the `cache_model` that matches how the provider actually bills:
 - `cached_content_plus_storage` — discounted read plus per-hour storage (Google)
 - `none` — local/self-hosted
 
-## Testing
+#### Testing
 
 ```bash
 node scripts/audit.mjs --list-sources                 # is it detected?
@@ -160,7 +229,7 @@ Please add a test to `test/run.mjs` with a small synthetic fixture for your form
 the suite uses real temp files and no mocks, precisely because the failure that matters
 is "the mapping silently matched nothing".
 
-## Ground rules
+#### Ground rules
 
 The project's value rests on not overstating what it knows. PRs are held to that:
 

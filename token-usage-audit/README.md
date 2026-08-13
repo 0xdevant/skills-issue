@@ -199,7 +199,7 @@ model's tokenizer. That's precisely why `verify` exists.
 
 ## Contributing a source
 
-One JSON file, no JavaScript. See [CONTRIBUTING.md](CONTRIBUTING.md).
+One JSON file, no JavaScript. See the repo [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Tests
 

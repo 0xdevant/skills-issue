@@ -22,18 +22,21 @@ token-usage-audit — where your AI coding spend actually goes
   --top <n>               rows per table (default 10)
   --target-context <n>    working-set size for the bloat counterfactual (default ${DEFAULTS.targetContext})
   --pricing <file>        override pricing.json
+  --plan <usd/month>      you pay a flat subscription — reframe money as plan value
   --json                  machine-readable output
   --list-sources          show detected sources and exit
   --help
 
-Costs are ESTIMATES computed from local logs and published list prices. They are
-not your bill: subscription plans, discounts and credits are not modelled.
+Dollar figures are API list-price EQUIVALENTS computed from local logs. If you are
+on a flat-rate subscription they are not money you spend — pass --plan <usd/month>
+and they will be reported as the value you extract from your plan instead.
 `;
 
 function parseArgs(argv) {
   const o = {
     source: "auto", since: null, project: null, top: 10,
     targetContext: DEFAULTS.targetContext, pricing: undefined, json: false, list: false,
+    plan: null,
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -45,6 +48,7 @@ function parseArgs(argv) {
       case "--top": o.top = Number(next()); break;
       case "--target-context": o.targetContext = Number(next()); break;
       case "--pricing": o.pricing = next(); break;
+      case "--plan": o.plan = Number(next()); break;
       case "--json": o.json = true; break;
       case "--list-sources": o.list = true; break;
       case "--help": case "-h": console.log(HELP); process.exit(0);
@@ -130,9 +134,25 @@ function report(res, opt) {
     return;
   }
 
-  console.log("\n" + bold("  Estimated spend"));
-  console.log(`    total          ${usd(agg.totalCost)}   ${dim(`(~${usd(agg.totalCost / days)}/day)`)}`);
-  console.log(`    addressable    ${usd(addressable)}   ${dim(`${((addressable / agg.totalCost) * 100).toFixed(0)}% — sum of non-overlapping findings below`)}`);
+  if (opt.plan) {
+    // Flat-rate subscription: the dollars are not spend, they are the API list
+    // price of the same work. Reporting them as spend is simply wrong, and it
+    // sends people optimizing a bill they do not have.
+    const months = days / 30.44;
+    const planCost = opt.plan * months;
+    console.log("\n" + bold("  Plan value") + dim("  (you pay a flat subscription — these are not costs)"));
+    console.log(`    subscription        ${usd(planCost)}   ${dim(`${usd(opt.plan)}/month over ${days.toFixed(0)} days`)}`);
+    console.log(`    API-equivalent      ${usd(agg.totalCost)}   ${dim("what this usage would cost at list price")}`);
+    console.log(`    ${bold("value ratio")}         ${bold((agg.totalCost / planCost).toFixed(1) + "x")}   ${dim("higher is better — you are ahead by this much")}`);
+    console.log("\n" + dim("    Reducing the numbers below does NOT save you money; your plan is flat."));
+    console.log(dim("    What it buys is rate-limit headroom and less context for the model to wade"));
+    console.log(dim("    through. Optimize only if you hit limits or want tighter sessions."));
+  } else {
+    console.log("\n" + bold("  API-equivalent value") + dim("  (list price of this usage — not a bill)"));
+    console.log(`    total          ${usd(agg.totalCost)}   ${dim(`(~${usd(agg.totalCost / days)}/day)`)}`);
+    console.log(`    addressable    ${usd(addressable)}   ${dim(`${((addressable / agg.totalCost) * 100).toFixed(0)}% — sum of non-overlapping findings below`)}`);
+    console.log(dim("    On a flat-rate subscription these are not money you spend — pass --plan <usd/month>."));
+  }
 
   if (agg.unpriced.size) {
     console.log("\n" + bold("  ⚠ Unpriced models") + dim(" (excluded from every total above — never costed at zero)"));
@@ -213,7 +233,7 @@ async function main() {
   }
 
   for (const r of results) report(r, opt);
-  console.log("\n" + dim("  Costs are estimates from published list prices, not your bill." +
+  console.log("\n" + dim("  Dollar figures are API list-price equivalents, not a bill." +
     "\n  Next: node scripts/benchmark.mjs snapshot --label before   (then apply fixes, then verify)\n"));
 }
 
