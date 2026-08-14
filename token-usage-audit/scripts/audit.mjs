@@ -250,7 +250,7 @@ async function main() {
         (d.def.status === "unverified" ? "  [unverified mapping]" : ""));
     }
     const missing = defs.filter((x) => !detected.some((d) => d.def.name === x.name));
-    for (const m of missing) console.log(dim(`${m.name.padEnd(18)}, not installed`));
+    for (const m of missing) console.log(dim(`${m.name.padEnd(18)}not installed`));
     return;
   }
 
