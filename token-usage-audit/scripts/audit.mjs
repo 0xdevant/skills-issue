@@ -110,9 +110,10 @@ async function builtinsStatus() {
 function reportBuiltins(b, join) {
   console.log("\n" + bold("  Corroborate with the harness's own tooling"));
   console.log(dim("    This report reads local logs. Two things it structurally cannot see:"));
-  console.log(`    ${bold("/usage")}     plan limits and remaining headroom, the only source for whether any`);
-  console.log(dim("               of this matters. Also attributes usage by skill, subagent and MCP"));
+  console.log(`    ${bold("/usage")}     plan limits and remaining headroom, which decide whether any of`);
+  console.log(dim("               this matters. Also attributes usage by skill, subagent and MCP"));
   console.log(dim("               server, and flags 'long context' / 'cache misses' behaviours."));
+  console.log(dim("               On Pro/Max the context meter shows live 5h/7d headroom too."));
   if (b.insights) {
     const age = b.insights.ageDays;
     console.log(`    ${bold("/insights")}  report from ${age < 1 ? "today" : `${age.toFixed(0)}d ago`} at ${b.insights.path.replace(homedir(), "~")}`);

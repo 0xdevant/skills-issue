@@ -55,10 +55,16 @@ cost data on session id, which is what powers the `expensive-failures` and
 `cost-weighted-friction` findings.
 
 **`/usage` you must still ask for.** It is UI-only and cannot be run non-interactively;
-`claude -p "/usage"` will not work. Ask the user to run it and paste the result. It is
-the ONLY source for plan limits and remaining headroom, which local logs never record.
-On a flat-rate plan that is the difference between "worth fixing" and "irrelevant": if
-they are nowhere near their limits, say so and scale the recommendations down.
+`claude -p "/usage"` will not work. Ask the user to run it and paste the result. Local
+logs never record plan limits, and on a flat-rate plan the limits are the difference
+between "worth fixing" and "irrelevant": if they are nowhere near them, say so and
+scale the recommendations down.
+
+One exception worth knowing: for Claude.ai Pro/Max subscribers the status-line payload
+carries `rate_limits.five_hour.used_percentage` and `rate_limits.seven_day.*`, so the
+context meter this skill installs shows live headroom without `/usage`. It is absent
+for API users and until the first response of a session. `/usage` remains the
+authoritative breakdown; the meter is the always-on glance.
 
 If a built-in contradicts a finding here, **the built-in wins** on plan limits and
 attribution. Say which you are trusting and why.
