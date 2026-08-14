@@ -117,8 +117,11 @@ async function analyze(opt) {
 // ---------------------------------------------------------------- fixes
 
 const STATUSLINE_SCRIPT = `#!/usr/bin/env bash
-# Installed by token-usage-audit. Shows the two numbers that actually drive spend:
-# how big the context has grown, and what this session has cost so far.
+# Installed by token-usage-audit. Shows the numbers that actually drive spend: how
+# big the context has grown, what this session has cost, and on a Claude.ai Pro/Max
+# plan how much of the 5h and 7d rate limits are gone.
+#
+# The rate limits matter most on a flat plan: the bill is capped, the headroom is not.
 # Remove the "statusLine" key from settings.json to uninstall.
 #
 # This runs on every status-line event, so it must never write to stderr and never
@@ -130,31 +133,62 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 0
 fi
 
+# rate_limits is absent for API users and until the first API response of a session,
+# so each field carries a sentinel rather than assuming the key is there.
 parsed=$(printf '%s' "$input" | jq -r '
   [ (.context_window.used_percentage // 0 | floor),
     (.context_window.total_input_tokens // 0),
     (.cost.total_cost_usd // 0),
-    (.model.display_name // "?") ] | @tsv' 2>/dev/null | tr '\\t' ' ')
-read -r PCT TOK COST MODEL <<<"$parsed"
+    (.rate_limits.five_hour.used_percentage  // -1 | floor),
+    (.rate_limits.seven_day.used_percentage  // -1 | floor),
+    (.rate_limits.five_hour.resets_at // 0),
+    (.rate_limits.seven_day.resets_at // 0),
+    (.model.display_name // "?") ] | @tsv' 2>/dev/null)
+# Split on tabs, not spaces: display names contain spaces ("Opus 5") and must stay
+# a single field regardless of how many columns are added before them.
+IFS=$'\\t' read -r PCT TOK COST L5 L7 T5 T7 MODEL <<<"$parsed"
 
 # Any field can be empty if the payload shape changed; coerce before arithmetic.
-[[ "$PCT"  =~ ^[0-9]+$ ]]        || PCT=0
-[[ "$TOK"  =~ ^[0-9]+$ ]]        || TOK=0
+[[ "$PCT"  =~ ^[0-9]+$ ]]             || PCT=0
+[[ "$TOK"  =~ ^[0-9]+$ ]]             || TOK=0
 [[ "$COST" =~ ^[0-9]+([.][0-9]+)?$ ]] || COST=0
+[[ "$L5"   =~ ^-?[0-9]+$ ]]           || L5=-1
+[[ "$L7"   =~ ^-?[0-9]+$ ]]           || L7=-1
+[[ "$T5"   =~ ^[0-9]+$ ]]             || T5=0
+[[ "$T7"   =~ ^[0-9]+$ ]]             || T7=0
 [ -n "$MODEL" ] || MODEL="?"
+
+R=$'\\033[0m'; D=$'\\033[2m'
+hue() { if [ "$1" -ge 70 ]; then printf '\\033[31m'; elif [ "$1" -ge 40 ]; then printf '\\033[33m'; else printf '\\033[32m'; fi; }
 
 BAR_W=10
 FILLED=$(( PCT * BAR_W / 100 )); [ "$FILLED" -gt "$BAR_W" ] && FILLED=$BAR_W
 BAR=""
 for ((i=0;i<BAR_W;i++)); do [ "$i" -lt "$FILLED" ] && BAR="\${BAR}█" || BAR="\${BAR}░"; done
 
-if   [ "$PCT" -ge 70 ]; then C=$'\\033[31m'   # red: reset soon
-elif [ "$PCT" -ge 40 ]; then C=$'\\033[33m'
-else                        C=$'\\033[32m'; fi
-R=$'\\033[0m'; D=$'\\033[2m'
-
 printf "%s%s%s %s%%  %s%dk ctx%s  %s$%.2f%s  %s%s%s" \\
-  "$C" "$BAR" "$R" "$PCT" "$D" "$((TOK/1000))" "$R" "$D" "$COST" "$R" "$D" "$MODEL" "$R"
+  "$(hue "$PCT")" "$BAR" "$R" "$PCT" "$D" "$((TOK/1000))" "$R" "$D" "$COST" "$R" "$D" "$MODEL" "$R"
+
+# Rate limits render only when the payload carries them, so API users see no gap.
+if [ "$L5" -ge 0 ] || [ "$L7" -ge 0 ]; then
+  NOW=$(date +%s)
+  # Only shown once a window is tight enough that when it resets starts to matter.
+  countdown() {
+    local mins=$(( ($1 - NOW) / 60 ))
+    [ "$mins" -lt 0 ] && mins=0
+    if [ "$mins" -ge 60 ]; then printf ' %dh' $(( mins / 60 )); else printf ' %dm' "$mins"; fi
+  }
+  printf "  %s|%s" "$D" "$R"
+  if [ "$L5" -ge 0 ]; then
+    printf " %s5h %s%%%s" "$(hue "$L5")" "$L5" "$R"
+    if [ "$L5" -ge 70 ] && [ "$T5" -gt 0 ]; then printf "%s%s%s" "$D" "$(countdown "$T5")" "$R"; fi
+  fi
+  if [ "$L7" -ge 0 ]; then
+    printf " %s7d %s%%%s" "$(hue "$L7")" "$L7" "$R"
+    if [ "$L7" -ge 70 ] && [ "$T7" -gt 0 ]; then printf "%s%s%s" "$D" "$(countdown "$T7")" "$R"; fi
+  fi
+fi
+exit 0
 `;
 
 function buildFixes(ctx) {

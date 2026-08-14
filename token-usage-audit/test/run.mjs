@@ -9,8 +9,12 @@
 
 import { mkdtemp, mkdir, writeFile, rm, readFile, copyFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
+import { execFileSync, spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
 
 import { loadPricing, costRecord, resolveModel } from "../scripts/lib/cost.mjs";
 import { readSource, loadSourceDefs, getPath, canonicalRecord, parseSince } from "../scripts/lib/sources.mjs";
@@ -353,6 +357,59 @@ async function main() {
     await copyFile(bak, f);
 
     check("backup restores byte-identically", digest(await readFile(f, "utf8")) === before);
+    await rm(root, { recursive: true, force: true });
+  }
+
+  // --- status line: must render on every payload shape, never fail ------
+  //
+  // It runs on every status-line event, so a non-zero exit or a line on stderr is
+  // a user-visible defect. rate_limits is absent for API users and until the first
+  // response of a session, which is the shape most likely to regress.
+
+  {
+    const root = await tmp();
+    const cfg = join(root, "cfg");
+    await mkdir(cfg, { recursive: true });
+    execFileSync(process.execPath, [join(HERE, "..", "scripts", "apply.mjs"), "apply", "context-meter"], {
+      env: { ...process.env, CLAUDE_CONFIG_DIR: cfg }, encoding: "utf8",
+    });
+    const sl = join(cfg, "token-usage-audit", "statusline.sh");
+
+    const render = (payload) => {
+      const r = spawnSync("bash", [sl], { input: payload, encoding: "utf8" });
+      return { out: r.stdout || "", err: r.stderr || "", code: r.status };
+    };
+    const strip = (s) => s.replace(/\[[0-9;]*m/g, "");
+    const soon = Math.floor(Date.now() / 1000) + 8100;
+
+    const proMax = render(JSON.stringify({
+      model: { display_name: "Claude Opus 4.8" },
+      cost: { total_cost_usd: 2.31 },
+      context_window: { used_percentage: 42, total_input_tokens: 169500 },
+      rate_limits: { five_hour: { used_percentage: 23.5, resets_at: soon },
+                     seven_day: { used_percentage: 41.2, resets_at: soon } },
+    }));
+    check("status line shows Pro/Max rate limits", /5h 23%/.test(strip(proMax.out)) && /7d 41%/.test(strip(proMax.out)));
+    // Display names contain spaces. This holds today only because MODEL is read last;
+    // the explicit tab IFS is what keeps it true if a column is ever added after it.
+    check("status line keeps multi-word model names intact", /Claude Opus 4\.8/.test(strip(proMax.out)));
+
+    const apiUser = render(JSON.stringify({
+      model: { display_name: "Sonnet 5" },
+      cost: { total_cost_usd: 0.42 },
+      context_window: { used_percentage: 12, total_input_tokens: 24000 },
+    }));
+    check("status line omits rate limits when absent", !/5h |7d /.test(strip(apiUser.out)));
+    check("status line still renders context for API users", /12%/.test(strip(apiUser.out)));
+
+    const degenerate = ["{}", "not json at all", "", JSON.stringify({
+      context_window: { used_percentage: null, current_usage: null },
+    })];
+    const bad = degenerate.map(render);
+    check("status line exits 0 on every degenerate payload", bad.every((r) => r.code === 0));
+    check("status line never writes to stderr", [proMax, apiUser, ...bad].every((r) => r.err === ""));
+    check("status line always prints a bar", [proMax, apiUser, ...bad].every((r) => /[█░]{10}/.test(strip(r.out))));
+
     await rm(root, { recursive: true, force: true });
   }
 
