@@ -1,0 +1,13 @@
+{
+  "name": "conversation",
+  "description": "AI assistant replying to a user in Cantonese. Strict on characters, lenient on formal technical vocabulary.",
+  "max_chars": 0,
+  "register_max_level": 3,
+  "require_pivot": false,
+  "spoken_register": "strict",
+  "check_officialese": true,
+  "notes": "Spot-check tool. Its real use is as instruction — see references/conversation.md.",
+  "check_tech_terms": true,
+  "check_aspect_stacking": true,
+  "check_unknown_words": true
+}

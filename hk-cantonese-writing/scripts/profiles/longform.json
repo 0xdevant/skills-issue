@@ -1,0 +1,12 @@
+{
+  "name": "longform",
+  "description": "Articles and newsletters. Tolerates formal vocabulary; still strict on characters and grammar words.",
+  "max_chars": 0,
+  "register_max_level": 3,
+  "require_pivot": false,
+  "require_dated_source": false,
+  "spoken_register": "lenient",
+  "check_connectives": true,
+  "check_tech_terms": true,
+  "check_unknown_words": true
+}

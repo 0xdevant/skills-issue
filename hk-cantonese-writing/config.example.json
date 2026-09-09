@@ -1,0 +1,7 @@
+{
+  "_comment": "Optional. A content skill can point at this to fix defaults for a project.",
+  "default_profile": "post",
+  "register_max_level": 2,
+  "spoken_register": "strict",
+  "notes": "Platform rules (emoji, hashtags, length, CTAs) do NOT belong here — they are house style, not language. Keep them in your content skill."
+}

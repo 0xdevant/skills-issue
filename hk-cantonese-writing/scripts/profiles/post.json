@@ -1,0 +1,13 @@
+{
+  "name": "post",
+  "description": "Short-form social post. Strict on language, silent on house style.",
+  "max_chars": 0,
+  "register_max_level": 2,
+  "require_pivot": true,
+  "require_dated_source": false,
+  "spoken_register": "strict",
+  "notes": "max_chars 0 = no limit. Set it if your platform has one; that's house style, not language.",
+  "check_tech_terms": true,
+  "check_aspect_stacking": true,
+  "check_unknown_words": true
+}

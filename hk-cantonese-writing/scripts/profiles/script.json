@@ -1,0 +1,15 @@
+{
+  "name": "script",
+  "description": "Video / spoken script. Adds breath-length and spoken-delivery checks.",
+  "max_chars": 0,
+  "register_max_level": 3,
+  "require_pivot": false,
+  "require_dated_source": false,
+  "spoken_register": "strict",
+  "max_line_chars": 20,
+  "warn_no_particles": true,
+  "warn_digits": true,
+  "check_tech_terms": true,
+  "check_aspect_stacking": true,
+  "check_unknown_words": true
+}
