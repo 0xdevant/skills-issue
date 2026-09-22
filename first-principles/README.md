@@ -125,6 +125,18 @@ rsync -a --delete skills-issue/first-principles/ ~/.claude/skills/first-principl
 
 No scripts, no dependencies, no install step. The skill is stateless and writes no files.
 
+## Tests
+
+`evals/evals.json` holds 8 cases and 27 assertions covering the behaviours that are easy to
+regress: answering only what was asked, treating a statement as the question, the stuck
+floor, the escape hatch, and staying out of the way for mechanical lookups. Case 8 has no
+invocation at all and asserts the skill does **not** fire on its own.
+
+They run through Anthropic's `skill-creator` eval loop, which executes each prompt and grades
+the assertions. Note that `skill-creator`'s `run_eval.py` tests *description triggering*
+specifically, which this skill disables on purpose, so that particular runner is not the
+relevant one here.
+
 ## License
 
 GPL-3.0-or-later, as with the rest of this repo.

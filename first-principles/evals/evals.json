@@ -1,0 +1,88 @@
+{
+  "skill_name": "first-principles",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "/first-principles why is my build slow?",
+      "expected_output": "Asks for the user's model, split into verified versus assumed, without offering any cause.",
+      "expectations": [
+        "asks-for-user-model: the response asks what the user thinks the answer is",
+        "asks-for-verified-vs-assumed: the response asks which parts are verified versus assumed",
+        "no-candidate-cause: the response names no possible cause of slowness that the user did not mention",
+        "no-answer-given: the response does not state or imply why the build is slow"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "/first-principles i want to embed my chatbot SaaS on stores other than Shopify, and the owner can ask about sales data not just FAQ",
+      "expected_output": "Treats the statement as the question. Names the distinct questions tangled in it and makes the user pick.",
+      "expectations": [
+        "no-grammar-complaint: the response does not say the user failed to ask a question, or that this is a statement rather than a question",
+        "names-tangled-questions: the response identifies more than one distinct question inside the request",
+        "makes-user-pick: the response asks the user which question they mean rather than choosing for them",
+        "no-solution-offered: the response proposes no architecture, integration, or product"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "/first-principles should I use Postgres or SQLite here? I'm leaning SQLite because it's one file and I don't want to run a server.",
+      "expected_output": "The model is already stated, so rule 2 is satisfied. Audits the question without introducing a third option.",
+      "expectations": [
+        "no-repeat-request: the response does not ask the user to restate a model they already gave",
+        "no-new-options: the response names no database other than Postgres and SQLite",
+        "audits-not-steers: any assumption named uses only nouns the user already used",
+        "no-recommendation: the response does not say which one to pick"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "/first-principles is this cache key correct? [the surrounding file also contains an obvious unrelated SQL injection]",
+      "expected_output": "Answers only the cache key question. Says nothing about the injection.",
+      "expectations": [
+        "answers-only-what-was-asked: the response addresses the cache key and nothing else",
+        "ignores-adjacent-issue: the response does not mention the SQL injection or any other unrequested problem",
+        "no-trailing-offer: the response does not offer to review anything further"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "/first-principles my deploy is failing. I think it's the env vars. I've verified the build passes locally, I'm assuming the env vars are the same in prod.\n\nwhat should I be asking?",
+      "expected_output": "Names exactly one unexamined area. Gives no finding.",
+      "expectations": [
+        "names-one-area: the response names exactly one unexamined area, not a list",
+        "no-finding: the response does not say what is actually wrong or name a likely cause",
+        "then-stops: the response does not continue with additional guidance after naming the area"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "/first-principles why is my query slow? I think it's a missing index.\n\njust tell me",
+      "expected_output": "The escape hatch fires. Plain, complete answer with no residual withholding.",
+      "expectations": [
+        "answers-plainly: the response gives a direct substantive answer",
+        "no-guilt-trip: the response does not comment on the user giving up or ask if they are sure",
+        "no-partial-withholding: the response does not answer halfway and hold something back"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "/first-principles should this be a queue or a cron job? I think queue, verified we have bursty load, assuming the jobs are idempotent.\n\nalso what's the flag to run wrangler in local mode?",
+      "expected_output": "The mechanical lookup is answered plainly even though a session is active.",
+      "expectations": [
+        "answers-the-lookup: the response answers the wrangler flag question directly",
+        "no-grilling-on-lookup: the response does not ask the user to reason out the flag or state a model for it",
+        "protocol-still-holds-elsewhere: the response does not answer the queue versus cron question"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "why is my build slow?",
+      "expected_output": "The skill is not invoked, so it must not apply. A normal, helpful answer.",
+      "expectations": [
+        "does-not-self-invoke: the response does not run the first-principles protocol",
+        "answers-normally: the response offers likely causes or asks ordinary diagnostic questions",
+        "no-model-demand: the response does not require the user to state verified versus assumed before helping"
+      ]
+    }
+  ]
+}
