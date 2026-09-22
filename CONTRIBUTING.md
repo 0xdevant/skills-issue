@@ -33,9 +33,19 @@ description: >-
 ---
 ```
 
-Anything beyond those two is optional and client-specific: `version`, `license`, `platforms`,
-`status`, a `metadata` block. Add them if your client reads them, leave them out for the
-smallest portable skill. Both are fine, and the skills here do both.
+Add more keys when you need them. A client that does not know a key ignores it, so the
+skill still loads anywhere. Keys in use across Claude's own skills:
+
+| Key | What it does |
+| --- | --- |
+| `disable-model-invocation: true` | the skill only runs when the user invokes it by name, never on the agent's own initiative |
+| `version`, `license`, `status` | provenance, useful once a skill is shared |
+| `platforms` | narrows where the skill applies, e.g. `[linux, macos]` |
+| `metadata` | a free-form block for client-specific tags |
+
+Do not hand-roll in prose what a key already does. A skill that means to be user-invoked
+sets `disable-model-invocation`; writing "do not load this on your own initiative" into the
+description is padding the harness already handles.
 
 The description earns its keep or the skill never fires. Name the situations, not the
 features. If a word in your skill name means something else in another domain, say so

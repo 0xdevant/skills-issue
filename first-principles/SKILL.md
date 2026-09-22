@@ -7,6 +7,7 @@ description: >-
   choice between options, a design or architecture call, or any judgment question. They
   drive, they state what they have verified versus what they are assuming, and you answer
   only what was asked and volunteer nothing.
+disable-model-invocation: true
 ---
 
 # First Principles
