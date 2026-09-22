@@ -33,19 +33,37 @@ description: >-
 ---
 ```
 
-Add more keys when you need them. A client that does not know a key ignores it, so the
-skill still loads anywhere. Keys in use across Claude's own skills:
+Add more keys when you need them. A client that does not know a key ignores it, so the skill
+still loads anywhere.
+
+**Portable set.** Anthropic's `skill-creator` validator accepts exactly these, and rejects
+anything else, so a skill meant to travel should stay inside them:
 
 | Key | What it does |
 | --- | --- |
-| `disable-model-invocation: true` | the skill only runs when the user invokes it by name, never on the agent's own initiative |
-| `version`, `license`, `status` | provenance, useful once a skill is shared |
-| `platforms` | narrows where the skill applies, e.g. `[linux, macos]` |
-| `metadata` | a free-form block for client-specific tags |
+| `name` | required, kebab-case, matches the directory |
+| `description` | required, and the only part always in context |
+| `license` | e.g. `GPL-3.0-or-later` |
+| `allowed-tools` | restricts which tools the skill may use |
+| `metadata` | free-form block for client-specific values |
+| `compatibility` | which environments the skill supports |
 
-Do not hand-roll in prose what a key already does. A skill that means to be user-invoked
-sets `disable-model-invocation`; writing "do not load this on your own initiative" into the
-description is padding the harness already handles.
+**Claude Code accepts more than that validator allows.** These are in real use, including by
+Anthropic's own plugins, and are worth knowing:
+
+| Key | What it does |
+| --- | --- |
+| `disable-model-invocation: true` | the model may not load it on its own; the user invokes it |
+| `user-invocable: false` | the user may not call it; it is background knowledge for the model |
+| `argument-hint` | shown when the skill is invoked as a slash command |
+| `version` | provenance, common once a skill is shared |
+
+Those two invocation keys are separate questions, not opposites: one gates the model, the
+other gates the user. A skill that should only ever run when asked for sets
+`disable-model-invocation: true`.
+
+**Do not hand-roll in prose what a key already does.** Writing "do not load this on your own
+initiative" into a description is padding around something the frontmatter handles.
 
 The description earns its keep or the skill never fires. Name the situations, not the
 features. If a word in your skill name means something else in another domain, say so
