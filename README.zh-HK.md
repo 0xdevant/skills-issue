@@ -37,6 +37,7 @@ rsync -a --delete skills-issue/<skill-name>/ <your-skills-dir>/<skill-name>/
 | ----- | ---- |
 | [token-usage-audit](token-usage-audit/) | 喺本機 log 度睇實同慳返 AI coding agent 嘅 token 開支，再用 before/after benchmark 證明真係慳到。用邊個 model 都得。 |
 | [hk-cantonese-writing](hk-cantonese-writing/) | 寫地道嘅香港廣東話，post、稿、長文都得，仲有個 linter 幫你搵錯處。 |
+| [first-principles](first-principles/) | 唔畀你將思考外判俾 AI：你問、你講返自己點諗，個 agent 淨係答你提出嘅問題，唔會透露多餘嘢。 |
 
 ## 想加嘢入嚟？
 

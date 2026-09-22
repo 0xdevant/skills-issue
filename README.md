@@ -38,6 +38,7 @@ rsync -a --delete skills-issue/<skill-name>/ <your-skills-dir>/<skill-name>/
 | ----- | ----------- |
 | [token-usage-audit](token-usage-audit/) | Audits and reduces AI coding-agent token spend from local logs, then proves the saving with a before/after benchmark. Any model. |
 | [hk-cantonese-writing](hk-cantonese-writing/) | Writes natural Hong Kong Cantonese for posts, scripts and articles, with a linter for the mechanical rules. |
+| [first-principles](first-principles/) | Stops you outsourcing your reasoning: you ask and describe your model, the agent answers only what you asked and volunteers nothing. |
 
 ## Contributing
 
