@@ -9,7 +9,8 @@
         "asks-for-user-model: the response asks what the user thinks the answer is",
         "asks-for-verified-vs-assumed: the response asks which parts are verified versus assumed",
         "no-candidate-cause: the response names no possible cause of slowness that the user did not mention",
-        "no-answer-given: the response does not state or imply why the build is slow"
+        "no-answer-given: the response does not state or imply why the build is slow",
+        "no-new-nouns: the response names no cause or tool the user did not name (the noun test)"
       ]
     },
     {
@@ -20,6 +21,7 @@
         "no-grammar-complaint: the response does not say the user failed to ask a question, or that this is a statement rather than a question",
         "names-tangled-questions: the response identifies more than one distinct question inside the request",
         "makes-user-pick: the response asks the user which question they mean rather than choosing for them",
+        "no-new-nouns: the response names no platform, product, service or cause that the user did not name (the noun test)",
         "no-solution-offered: the response proposes no architecture, integration, or product"
       ]
     },
