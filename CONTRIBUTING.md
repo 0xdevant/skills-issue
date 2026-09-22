@@ -19,7 +19,8 @@ frontmatter:
 
 ### SKILL.md frontmatter
 
-Keep it to two keys. Extra keys are client-specific and hurt portability:
+`name` and `description` are required. Every client reads them, and the description is the
+only part always loaded into context:
 
 ```yaml
 ---
@@ -31,6 +32,10 @@ description: >-
   say. Disambiguate if the name is overloaded.
 ---
 ```
+
+Anything beyond those two is optional and client-specific: `version`, `license`, `platforms`,
+`status`, a `metadata` block. Add them if your client reads them, leave them out for the
+smallest portable skill. Both are fine, and the skills here do both.
 
 The description earns its keep or the skill never fires. Name the situations, not the
 features. If a word in your skill name means something else in another domain, say so
