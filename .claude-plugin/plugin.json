@@ -1,0 +1,13 @@
+{
+  "name": "skills-issue",
+  "version": "1.0.0",
+  "description": "Portable agent skills: token-spend audits, Hong Kong Cantonese writing, and first-principles thinking.",
+  "author": {
+    "name": "0xdevant",
+    "email": "26415019+0xdevant@users.noreply.github.com",
+    "url": "https://github.com/0xdevant"
+  },
+  "homepage": "https://github.com/0xdevant/skills-issue",
+  "repository": "https://github.com/0xdevant/skills-issue",
+  "license": "GPL-3.0-or-later"
+}
