@@ -1,0 +1,13 @@
+{
+  "name": "docs",
+  "description": "README, install steps, table cells, CONTRIBUTING. Reference copy that gets scanned, not read. Neutral register, no narrative devices.",
+  "max_chars": 0,
+  "register_max_level": 2,
+  "require_pivot": false,
+  "spoken_register": "strict",
+  "check_officialese": true,
+  "check_tech_terms": true,
+  "check_aspect_stacking": true,
+  "check_unknown_words": true,
+  "notes": "require_pivot is off on purpose: a table cell has no story. Linting docs with --profile post produces a spurious 「最X係」 warning."
+}

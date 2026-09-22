@@ -46,14 +46,17 @@ Getting this backwards is the main way a writing skill becomes annoying.
 
 Before writing or editing anything, settle these. They determine every later choice.
 
-1. **Medium** — read on a screen, heard aloud, read at length, or *said to one person*?
+1. **Medium** — read on a screen, heard aloud, read at length, *said to one person*, or
+   *looked up for an answer*?
    → `references/social-posts.md` · `references/video-scripts.md` · `references/long-form.md` ·
-   `references/conversation.md`
+   `references/conversation.md` · `references/docs.md`
 
-   The fourth is easy to forget: an **AI assistant replying to a user** is writing Cantonese too,
+   The last two are easy to forget. An **AI assistant replying to a user** is writing Cantonese too,
    and it's where 簡體字 and 書面語 slip through most, because nobody proofreads a chat message.
    The character and 口語 rules apply to *all* output — replies, status reports, error messages,
-   summaries — not only to published content.
+   summaries — not only to published content. And **docs** (a README, an install step, a table
+   cell) is reference copy: it is the one medium where L3 casual is a mistake rather than a
+   preference, because there is no persona to earn a voice with.
 2. **Register** — where on the dial, L1 to L5?
    → `references/register.md`. Ask if it isn't obvious; guessing produces bland L2 mush.
 3. **Who's talking, to whom?** A brand account, a person, a narrator. Affects 語氣詞 density and
@@ -117,7 +120,7 @@ Independent of register or medium — see `references/pitfalls.md`:
 ## Lint before you ship
 
 ```bash
-node scripts/lint-cantonese.mjs <file> --profile post|script|longform|conversation
+node scripts/lint-cantonese.mjs <file> --profile post|script|longform|conversation|docs
 ```
 
 Catches the mechanical rules: 簡體字, 書面語 markers, medium-specific problems. Register is not one
