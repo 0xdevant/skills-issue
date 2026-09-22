@@ -1,0 +1,28 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate skill structure
+        run: node .github/scripts/validate-skills.mjs
+
+      - name: Run skill test suites
+        run: |
+          for t in $(find . -path '*/test/run.mjs' -not -path './.git/*' | sort); do
+            echo "::group::$t"
+            node "$t" || exit 1
+            echo "::endgroup::"
+          done
+
+      - name: Lint Cantonese docs
+        run: node hk-cantonese-writing/scripts/lint-cantonese.mjs README.zh-HK.md --profile docs
