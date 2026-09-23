@@ -1,11 +1,11 @@
-# 文件 — README, install steps, reference copy
+# 文件：README、install steps、reference copy
 
 The medium nobody plans for. Every skill in a repo needs a Cantonese README row, an install
 block, a table cell. It is Cantonese prose, so every 口語 and 繁體字 rule still applies, but
 it is **reference copy**: scanned for an answer, not read for a voice.
 
-**Lint with `--profile docs`.** Linting docs with `post` produces a spurious 「最X係」 pivot
-warning, because `post` expects a story and a table cell does not have one.
+**Lint with `--profile docs`.** The other profiles expect a story shape that reference copy
+does not have.
 
 ## Register: L2 neutral, and stay there
 
