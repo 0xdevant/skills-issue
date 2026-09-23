@@ -62,6 +62,10 @@ Those two invocation keys are separate questions, not opposites: one gates the m
 other gates the user. A skill that should only ever run when asked for sets
 `disable-model-invocation: true`.
 
+Both tables are enforced by `.github/scripts/validate-skills.mjs`, which runs on every push.
+An unknown key fails; a non-portable one is a note, not an error. Add a key there when you add
+one here.
+
 **Do not hand-roll in prose what a key already does.** Writing "do not load this on your own
 initiative" into a description is padding around something the frontmatter handles.
 
@@ -82,12 +86,29 @@ because this repo also contains a Solidity skill.
 - **State your limits.** Anything unverified gets marked unverified in the output, not
   quietly presented as fact.
 
+### Evals
+
+A skill whose value is *behavioural* needs cases, or nobody can tell a change from a regression.
+Put them in `<skill-name>/evals/<case-name>/`, each case a `prompt.md` plus one or more
+`graders/*.md`, and run them:
+
+```bash
+claude plugin eval <skill-name> --runs 3 --ablation none
+```
+
+Write the grader from what `SKILL.md` says, not from what the model happened to output. A grader
+you loosened to make a run go green tests nothing. If a case fails, decide first whether the
+skill is wrong or the grader is, and say which in the commit.
+
+`first-principles/evals/` is the worked example.
+
 ### Checklist
 
 1. Directory name matches frontmatter `name`.
 2. `SKILL.md` description names concrete trigger situations.
 3. Scripts run from a fresh clone with no install step.
-4. Add a row to the Skills table in the root `README.md`.
+4. Add a row to the Skills table in **both** `README.md` and `README.zh-HK.md`.
+5. `node .github/scripts/validate-skills.mjs` passes.
 
 ---
 
