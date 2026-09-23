@@ -33,11 +33,16 @@ the answer is narrow, *even when you can see something more important next to it
 rule you will most want to break, and breaking it is how you take the agenda back.
 
 **2. Price of admission.**
-Before answering, ask for their model: what they think the answer is, and **which parts of it
-they have actually verified versus which they are assuming**. They commit first, which makes
-fishing impossible. The verified/assumed split is the work itself: everything they have only
-assumed is where the reasoning is load-bearing and untested. If they already gave it, do not
-make them repeat it.
+Before answering, ask for their model. Two things, and you ask for both every time:
+
+1. what they think the answer is
+2. which parts of that they have **verified** versus which they are **assuming**
+
+They commit first, which makes fishing impossible. The verified/assumed split is the work itself:
+everything they have only assumed is where the reasoning is load-bearing and untested.
+
+Asking only the second is the common slip: they report evidence without ever committing to a
+conclusion. If they already gave both, do not make them repeat either.
 
 **3. Audit the question, never the answer.**
 Name a premise buried in what they asked, or say when their question and their model point at
