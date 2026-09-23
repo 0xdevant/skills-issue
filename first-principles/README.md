@@ -127,15 +127,22 @@ No scripts, no dependencies, no install step. The skill is stateless and writes 
 
 ## Tests
 
-`evals/evals.json` holds 8 cases and 27 assertions covering the behaviours that are easy to
-regress: answering only what was asked, treating a statement as the question, the stuck
-floor, the escape hatch, and staying out of the way for mechanical lookups. Case 8 has no
-invocation at all and asserts the skill does **not** fire on its own.
+`evals/` holds 8 cases, each a directory with a `prompt.md` and one or more graders. They run
+on `claude plugin eval`:
 
-They run through Anthropic's `skill-creator` eval loop, which executes each prompt and grades
-the assertions. Note that `skill-creator`'s `run_eval.py` tests *description triggering*
-specifically, which this skill disables on purpose, so that particular runner is not the
-relevant one here.
+```bash
+claude plugin eval first-principles --runs 3 --ablation none
+```
+
+The cases cover the behaviours that are easy to regress: asking for the user's model split into
+verified versus assumed, treating a statement as the question, staying narrow when an obvious
+unrelated bug sits two lines away, the stuck floor, the escape hatch, and getting out of the way
+for a mechanical lookup mid-session. The `not-invoked` case has no invocation at all and asserts
+the skill does **not** fire on its own.
+
+Run it with `--ablation none`. The default `with-without` arm strips the plugin and re-runs the
+same prompt, but every case here opens with `/first-principles`, which without the plugin is just
+an unknown command. The baseline arm measures nothing for a user-invoked skill.
 
 ## License
 
