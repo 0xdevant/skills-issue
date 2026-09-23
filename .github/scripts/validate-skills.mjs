@@ -69,9 +69,11 @@ for (const skill of skills) {
     catch (e) { fail(skill, `invalid JSON in ${f.slice(dir.length + 1)}: ${e.message}`); }
   }
 
-  // A skill listed in the README table is how anyone finds it.
-  if (!readFileSync(join(ROOT, 'README.md'), 'utf8').includes(`(${skill}/)`))
-    fail(skill, 'not listed in the README skills table');
+  // A skill listed in a README table is how anyone finds it. Both tables, or the
+  // translated one silently falls behind.
+  for (const readme of ['README.md', 'README.zh-HK.md'])
+    if (!readFileSync(join(ROOT, readme), 'utf8').includes(`(${skill}/)`))
+      fail(skill, `not listed in the ${readme} skills table`);
 }
 
 console.log(`\n${skills.length} skills · ${failures} FAIL · ${notes} notes`);
